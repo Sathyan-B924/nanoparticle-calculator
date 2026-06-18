@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nanoparticle Concentration Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/style.css" />
+  <script src="static/utils.js"></script>
+  <script src="static/calc.js"></script>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="title">
+          <h1>Nanoparticle Concentration Calculator</h1>
+          <p>Single-metal, spherical nanoparticles</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <nav class="nav" aria-label="Pages">
+          <a class="nav-link active" href="./">Forward calc</a>
+          <a class="nav-link" href="solve/">Solve for mass/number</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- Inputs -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Inputs</h2>
+          <span class="muted">Edit one concentration, the other updates automatically.</span>
+        </div>
+
+        <form class="form" onsubmit="return false;">
+          <div class="row">
+            <label class="field">
+              <span class="label">Metal</span>
+              <select id="metal" class="control"></select>
+            </label>
+
+            <label class="field">
+              <span class="label">Diameter (nm)</span>
+              <input id="diameter" class="control" type="number" step="any" min="0" value="20" />
+            </label>
+          </div>
+
+          <div class="mode">
+            <div class="mode-left">
+              <div class="label">Input mode</div>
+              <div class="radios">
+                <label class="radio">
+                  <input type="radio" name="mode" value="mass" checked />
+                  <span>Mass</span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="mode" value="number" />
+                  <span>Number</span>
+                </label>
+              </div>
+            </div>
+            <div class="mode-right">
+              <div class="hint" id="modeHint">Mass is editable. Number is auto-calculated.</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <div class="label-row">
+                <span class="label">Mass concentration</span>
+                <select id="massUnit" class="control control-inline" title="Mass unit">
+                  <option value="mg" selected>mg/mL</option>
+                  <option value="ug">ug/mL</option>
+                </select>
+              </div>
+              <input id="mass" class="control" type="number" step="any" min="0" placeholder="e.g., 0.10" />
+              <span class="help">Editable in mass mode</span>
+            </label>
+
+            <div class="field">
+              <span class="label">Number concentration (particles/mL)</span>
+              <div class="sci">
+                <input id="numCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="e.g., 2.12" />
+                <span class="sci-mid">× 10^</span>
+                <select id="numExp" class="control control-sci mono"></select>
+              </div>
+              <span class="help">Editable in number mode</span>
+              <div class="smallbox">
+                <div class="smallbox-k">Full value</div>
+                <div class="smallbox-v mono" id="numFull">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="status">
+            <div id="error" class="msg error" hidden></div>
+          </div>
+
+          <noscript>
+            <div class="msg error">JavaScript is required for live calculation.</div>
+          </noscript>
+        </form>
+      </section>
+
+      <!-- Results -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Results</h2>
+          <span class="muted" id="resultTag">Waiting for valid input…</span>
+        </div>
+
+        <div class="results">
+          <div class="kpi">
+            <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outSurface').textContent, this)">Copy</button>
+            <div class="kpi-label">Surface concentration</div>
+            <div class="kpi-value mono" id="outSurface">-</div>
+            <div class="kpi-unit">cm<sup>2</sup>/mL</div>
+          </div>
+
+          <div class="kpi">
+            <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outMolar').textContent, this)">Copy</button>
+            <div class="kpi-label">Nanoparticle molar concentration</div>
+            <div class="kpi-value mono" id="outMolar">-</div>
+            <div class="kpi-unit">nM</div>
+          </div>
+        </div>
+
+        <div class="tables">
+          <div class="table">
+            <div class="table-title">Main outputs</div>
+            <div class="rows">
+              <div class="r"><div class="k">Number concentration</div><div class="v mono" id="outNumber">-</div></div>
+              <div class="r"><div class="k">Mass concentration</div><div class="v mono" id="outMass">-</div></div>
+            </div>
+          </div>
+
+          <div class="table">
+            <div class="table-title">Metal constants</div>
+            <div class="rows">
+              <div class="r"><div class="k">Metal</div><div class="v mono" id="outMetal">-</div></div>
+              <div class="r"><div class="k">Density</div><div class="v mono" id="outDensity">-</div></div>
+              <div class="r"><div class="k">Atomic weight</div><div class="v mono" id="outAW">-</div></div>
+            </div>
+          </div>
+
+          <details class="details">
+            <summary>Show intermediate per-particle values</summary>
+            <div class="table">
+              <div class="table-title">Intermediate (per particle)</div>
+              <div class="rows">
+                <div class="r"><div class="k">Radius</div><div class="v mono" id="midRadius">-</div></div>
+                <div class="r"><div class="k">Volume</div><div class="v mono" id="midVolume">-</div></div>
+                <div class="r"><div class="k">Surface area</div><div class="v mono" id="midArea">-</div></div>
+                <div class="r"><div class="k">Mass</div><div class="v mono" id="midMass">-</div></div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span class="muted">Tip: 1 nm = 1e-7 cm. Sphere assumed.</span>
+      <div class="attr">
+        <span>Biosensors &amp; Nanoelectrochemistry Lab.</span>
+        <span class="dot">•</span>
+        <span>Center for Electrochemical Molecular Conversion</span>
+      </div>
+    </footer>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // Populate metal dropdown from calc.js
+  const metalEl = $("metal");
+  Object.entries(METALS).forEach(([sym, m]) => {
+    const opt = document.createElement("option");
+    opt.value = sym;
+    opt.textContent = `${sym} (${m.name})`;
+    metalEl.appendChild(opt);
+  });
+
+  const diaEl      = $("diameter");
+  const massEl     = $("mass");
+  const massUnitEl = $("massUnit");
+  const coeffEl    = $("numCoeff");
+  const expEl      = $("numExp");
+  const numFullEl  = $("numFull");
+  const errorEl    = $("error");
+  const modeHintEl = $("modeHint");
+  const resultTagEl= $("resultTag");
+  const outSurface = $("outSurface");
+  const outMolar   = $("outMolar");
+  const outNumber  = $("outNumber");
+  const outMass    = $("outMass");
+  const outMetal   = $("outMetal");
+  const outDensity = $("outDensity");
+  const outAW      = $("outAW");
+  const midRadius  = $("midRadius");
+  const midVolume  = $("midVolume");
+  const midArea    = $("midArea");
+  const midMass    = $("midMass");
+
+  let timer = null;
+  let prevMassUnit = massUnitEl.value;
+
+  function getMode() {
+    const r = document.querySelector('input[name="mode"]:checked');
+    return r ? r.value : "mass";
+  }
+
+  function massUnitLabel() { return massUnitEl.value === "ug" ? "ug/mL" : "mg/mL"; }
+  function mgToSelected(mg){ return massUnitEl.value === "ug" ? mg * 1e3 : mg; }
+  function selectedToMg(x) { return massUnitEl.value === "ug" ? x * 1e-3 : x; }
+
+  function setError(text) {
+    if (!text) { errorEl.hidden = true; errorEl.textContent = ""; return; }
+    errorEl.textContent = text; errorEl.hidden = false;
+  }
+
+  function clearOutputs() {
+    [outSurface,outMolar,outNumber,outMass,outMetal,outDensity,outAW,
+     midRadius,midVolume,midArea,midMass].forEach(el => el.textContent = "-");
+    resultTagEl.textContent = "Waiting for valid input…";
+  }
+
+  function scheduleCompute() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(compute, 180);
+  }
+
+  function fillExponentOptions() {
+    expEl.innerHTML = "";
+    for (let e = 6; e <= 18; e++) {
+      const opt = document.createElement("option");
+      opt.value = opt.textContent = String(e);
+      expEl.appendChild(opt);
+    }
+    expEl.value = "12";
+  }
+
+  function refreshModeUI() {
+    const mode = getMode();
+    if (mode === "mass") {
+      massEl.readOnly = false; coeffEl.readOnly = true; expEl.disabled = true;
+      massEl.classList.remove("readonly"); coeffEl.classList.add("readonly"); expEl.classList.add("readonly");
+      modeHintEl.textContent = `Mass (${massUnitLabel()}) is editable. Number is auto-calculated.`;
+    } else {
+      massEl.readOnly = true; coeffEl.readOnly = false; expEl.disabled = false;
+      massEl.classList.add("readonly"); coeffEl.classList.remove("readonly"); expEl.classList.remove("readonly");
+      modeHintEl.textContent = `Number is editable. Mass (${massUnitLabel()}) is auto-calculated.`;
+    }
+    setError(""); scheduleCompute();
+  }
+
+  function parseCoeff() {
+    const s = String(coeffEl.value || "").trim().replace(",", ".");
+    if (!s) return null;
+    const x = Number(s);
+    return Number.isFinite(x) ? x : null;
+  }
+
+  function fromSciParts(c, e) { return c * Math.pow(10, e); }
+
+  function toSciParts(x) {
+    if (!(x > 0) || !Number.isFinite(x)) return null;
+    const exp = Math.floor(Math.log10(x));
+    return { coeff: x / Math.pow(10, exp), exp };
+  }
+
+  function setFullValueFromCoeffExp() {
+    const c = parseCoeff(), e = Number(expEl.value);
+    if (c === null || !(c > 0) || !Number.isFinite(e)) { numFullEl.textContent = "-"; return; }
+    const n = fromSciParts(c, e);
+    numFullEl.textContent = (Number.isFinite(n) && n > 0) ? n.toExponential(6).replace("+","") : "-";
+  }
+
+  function compute() {
+    setError("");
+    const metal = metalEl.value;
+    const dia   = Number(diaEl.value);
+
+    if (!Number.isFinite(dia) || dia <= 0) {
+      clearOutputs(); setError("Diameter must be > 0 nm."); return;
+    }
+
+    const mode = getMode();
+    let mass_mg_ml = null, number_per_ml = null;
+
+    if (mode === "mass") {
+      const mSel = Number(massEl.value);
+      if (!Number.isFinite(mSel) || mSel <= 0) {
+        clearOutputs(); resultTagEl.textContent = "Enter mass concentration to calculate."; return;
+      }
+      mass_mg_ml = selectedToMg(mSel);
+    } else {
+      const c = parseCoeff(), e = Number(expEl.value);
+      setFullValueFromCoeffExp();
+      if (c === null || c <= 0) {
+        clearOutputs(); resultTagEl.textContent = "Enter coefficient to calculate."; return;
+      }
+      const n = fromSciParts(c, e);
+      if (!Number.isFinite(n) || n <= 0) {
+        clearOutputs(); resultTagEl.textContent = "Invalid number concentration."; return;
+      }
+      number_per_ml = n;
+    }
+
+    try {
+      const data = calculate(metal, dia, mode, mass_mg_ml, number_per_ml);
+
+      if (mode === "mass") {
+        const sp = toSciParts(data.outputs.number_per_ml);
+        if (sp) {
+          const minE = Number(expEl.options[0].value);
+          const maxE = Number(expEl.options[expEl.options.length-1].value);
+          const e2 = Math.max(minE, Math.min(maxE, sp.exp));
+          expEl.value = String(e2);
+          coeffEl.value = (data.outputs.number_per_ml / Math.pow(10, e2)).toPrecision(6).replace(/\.?0+$/,"");
+        }
+        numFullEl.textContent = data.formatted.number_per_ml;
+      } else {
+        massEl.value = fmt(mgToSelected(data.outputs.mass_mg_ml));
+        numFullEl.textContent = data.formatted.number_per_ml;
+      }
+
+      outSurface.textContent = data.formatted.surface_cm2_ml;
+      outMolar.textContent   = data.formatted.molar_nM;
+      outNumber.textContent  = data.formatted.number_per_ml + " particles/mL";
+      outMass.textContent    = fmt(mgToSelected(data.outputs.mass_mg_ml)) + " " + massUnitLabel();
+      outMetal.textContent   = `${data.metal.symbol} (${data.metal.name})`;
+      outDensity.textContent = `${data.metal.density_g_cm3} g/cm³`;
+      outAW.textContent      = `${data.metal.atomic_weight_g_mol} g/mol`;
+      midRadius.textContent  = data.formatted.radius_cm + " cm";
+      midVolume.textContent  = data.formatted.volume_cm3_per_particle + " cm³";
+      midArea.textContent    = data.formatted.area_cm2_per_particle + " cm²";
+      midMass.textContent    = data.formatted.mass_g_per_particle + " g";
+      resultTagEl.textContent = "Updated";
+    } catch(e) {
+      clearOutputs(); setError(String(e.message || e)); resultTagEl.textContent = "Error";
+    }
+  }
+
+  function convertMassValueOnUnitChange() {
+    const current = Number(massEl.value);
+    if (!Number.isFinite(current) || current <= 0) { prevMassUnit = massUnitEl.value; refreshModeUI(); return; }
+    if (prevMassUnit === massUnitEl.value) return;
+    const mg = prevMassUnit === "ug" ? current * 1e-3 : current;
+    massEl.value = fmt(massUnitEl.value === "ug" ? mg * 1e3 : mg);
+    prevMassUnit = massUnitEl.value;
+    refreshModeUI();
+  }
+
+  fillExponentOptions();
+  massEl.value = "0.10"; coeffEl.value = "2.12"; expEl.value = "11";
+  setFullValueFromCoeffExp();
+
+  metalEl.addEventListener("change", scheduleCompute);
+  diaEl.addEventListener("input", scheduleCompute);
+  massEl.addEventListener("input", () => { if (!massEl.readOnly) scheduleCompute(); });
+  massUnitEl.addEventListener("change", convertMassValueOnUnitChange);
+  coeffEl.addEventListener("input", () => { setFullValueFromCoeffExp(); if (!coeffEl.readOnly) scheduleCompute(); });
+  expEl.addEventListener("change", () => { setFullValueFromCoeffExp(); if (!expEl.disabled) scheduleCompute(); });
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", refreshModeUI));
+
+  refreshModeUI();
+})();
+</script>
+</body>
+</html>
