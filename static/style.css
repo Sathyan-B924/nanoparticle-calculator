@@ -37,7 +37,7 @@ html,body{ height:100%; }
 
 body{
   margin:0;
-  font-family:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family:"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color:var(--ink);
   background:var(--bg);
   -webkit-font-smoothing:antialiased;
@@ -219,9 +219,8 @@ input.mono, .control.mono{ font-size:15px; letter-spacing:0.01em; }
 /* ---------- Mode (segmented radios) ---------- */
 .mode{
   display:flex;
-  gap:14px;
-  align-items:center;
-  justify-content:space-between;
+  flex-direction:column;
+  gap:10px;
   background:var(--panel);
   border-radius:var(--radius-tile);
   padding:14px;
@@ -278,8 +277,6 @@ input.mono, .control.mono{ font-size:15px; letter-spacing:0.01em; }
 .hint{
   color:var(--muted);
   font-size:12px;
-  text-align:right;
-  max-width:240px;
   line-height:1.35;
 }
 
@@ -508,7 +505,6 @@ details[open] > summary::before{ content:"\2212"; }
 /* ---------- Responsive ---------- */
 @media (max-width: 1000px){
   .grid{ grid-template-columns:1fr; }
-  .hint{ text-align:left; max-width:none; }
 }
 
 @media (max-width: 720px){
@@ -520,6 +516,4 @@ details[open] > summary::before{ content:"\2212"; }
   .topbar-right{ justify-content:space-between; }
   .nav{ flex:1; justify-content:center; }
   .nav-link{ flex:1; text-align:center; }
-  .mode{ flex-direction:column; align-items:stretch; }
-  .hint{ text-align:left; }
 }
