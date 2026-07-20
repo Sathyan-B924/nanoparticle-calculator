@@ -26,6 +26,9 @@ for (const relativePath of ["index.html", "solve/index.html"]) {
 const stockHtml = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 assert.match(stockHtml, /id="numberRangeMinCoeff"/);
 assert.match(stockHtml, /id="numberRangeMinExp"/);
+assert.match(stockHtml, /name="concentrationEntry" value="single"/);
+assert.match(stockHtml, /name="concentrationEntry" value="range"/);
+assert.match(stockHtml, /Their midpoint becomes the working concentration/);
 assert.match(stockHtml, /volume_ul: 2500/);
 
 const plannerHtml = fs.readFileSync(path.join(__dirname, "..", "solve", "index.html"), "utf8");

@@ -98,23 +98,35 @@
             <div class="hint" id="modeHint">Enter metal mass only, excluding ligands, stabilizer, and solvent.</div>
           </div>
 
+          <div class="mode">
+            <div class="mode-left">
+              <div class="label">Certificate concentration format</div>
+              <div class="radios">
+                <label class="radio"><input type="radio" name="concentrationEntry" value="single" checked /><span>Single value</span></label>
+                <label class="radio"><input type="radio" name="concentrationEntry" value="range" /><span>Min–max range</span></label>
+              </div>
+            </div>
+            <div class="hint" id="entryHint">Use this when the certificate reports one concentration value.</div>
+          </div>
+
+          <label id="massUnitPanel" class="field">
+            <span class="label">Metal mass concentration unit</span>
+            <select id="massUnit" class="control" title="Mass unit">
+              <option value="mg" selected>mg/mL</option>
+              <option value="ug">µg/mL</option>
+            </select>
+          </label>
+
           <div id="massInputPanel" class="concentration-panel">
             <label class="field">
-              <div class="label-row">
-                <span class="label">Nominal metal mass concentration</span>
-                <select id="massUnit" class="control control-inline" title="Mass unit">
-                  <option value="mg" selected>mg/mL</option>
-                  <option value="ug">µg/mL</option>
-                </select>
-              </div>
+              <span class="label">Certified metal mass concentration</span>
               <input id="mass" class="control" type="number" step="any" min="0" value="0.020" />
-              <span class="help">Enter the nominal value stated on the supplier certificate.</span>
             </label>
           </div>
 
           <div id="numberInputPanel" class="concentration-panel" hidden>
             <div class="field">
-              <span class="label">Nominal particle-number concentration (particles/mL)</span>
+              <span class="label">Certified particle-number concentration (particles/mL)</span>
               <div class="sci">
                 <input id="numCoeff" class="control control-sci mono" type="text" inputmode="decimal" value="6.54" />
                 <span class="sci-mid">× 10^</span>
@@ -125,23 +137,22 @@
             </div>
           </div>
 
-          <details class="details details-form">
-            <summary>Add certified min–max range</summary>
-            <div id="massRangePanel" class="row details-body">
+          <div id="rangeInputPanel" class="range-panel" hidden>
+            <div id="massRangePanel" class="row">
               <label class="field">
                 <span class="label" id="massRangeMinLabel">Minimum metal mass concentration (mg/mL)</span>
-                <input id="massRangeMin" class="control mono" type="text" inputmode="decimal" placeholder="optional" />
+                <input id="massRangeMin" class="control mono" type="text" inputmode="decimal" placeholder="required" />
               </label>
               <label class="field">
                 <span class="label" id="massRangeMaxLabel">Maximum metal mass concentration (mg/mL)</span>
-                <input id="massRangeMax" class="control mono" type="text" inputmode="decimal" placeholder="optional" />
+                <input id="massRangeMax" class="control mono" type="text" inputmode="decimal" placeholder="required" />
               </label>
             </div>
-            <div id="numberRangePanel" class="row details-body" hidden>
+            <div id="numberRangePanel" class="row" hidden>
               <div class="field">
                 <span class="label">Minimum number concentration (particles/mL)</span>
                 <div class="sci">
-                  <input id="numberRangeMinCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="optional" />
+                  <input id="numberRangeMinCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="required" />
                   <span class="sci-mid">× 10^</span>
                   <select id="numberRangeMinExp" class="control control-sci mono"></select>
                 </div>
@@ -149,14 +160,14 @@
               <div class="field">
                 <span class="label">Maximum number concentration (particles/mL)</span>
                 <div class="sci">
-                  <input id="numberRangeMaxCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="optional" />
+                  <input id="numberRangeMaxCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="required" />
                   <span class="sci-mid">× 10^</span>
                   <select id="numberRangeMaxExp" class="control control-sci mono"></select>
                 </div>
               </div>
             </div>
-            <p class="help">Keep the certificate's nominal value above. Add this only when the same certificate also supplies a minimum and/or maximum specification.</p>
-          </details>
+            <p class="help">Both limits are required. Their midpoint is used as the working concentration, while the full certified range is retained in the results and dilution planner.</p>
+          </div>
 
           <div id="sizeWarning" class="msg warning" hidden></div>
           <div id="error" class="msg error" hidden></div>
@@ -173,7 +184,7 @@
         <div class="results">
           <div class="kpi">
             <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outSurface').textContent, this)">Copy</button>
-            <div class="kpi-label">Nominal geometric surface-area concentration</div>
+            <div class="kpi-label" id="surfaceKpiLabel">Nominal geometric surface-area concentration</div>
             <div class="kpi-value mono" id="outSurface">-</div>
             <div class="kpi-unit">cm<sup>2</sup>/mL</div>
           </div>
@@ -233,7 +244,7 @@
       </section>
     </main>
 
-    <footer class="foot">Use “nominal geometric surface-area concentration” when reporting this value.</footer>
+    <footer class="foot">Record whether the working concentration came from a single certified value or the midpoint of a certified range.</footer>
   </div>
 
 <script>
@@ -262,6 +273,7 @@
     return document.querySelector(`input[name="${name}"]:checked`)?.value || fallback;
   }
   function inputMode() { return selectedRadio("mode", "mass"); }
+  function concentrationEntryMode() { return selectedRadio("concentrationEntry", "single"); }
   function sizeMode() { return selectedRadio("sizeMode", "single"); }
   function selectedToMg(value) {
     if (value === null) return null;
@@ -281,7 +293,9 @@
     return raw === "" ? null : Number(raw.replace(",", "."));
   }
   function parseCoeff(element) {
-    const value = Number(element.value.trim().replace(",", "."));
+    const raw = element.value.trim();
+    if (raw === "") return null;
+    const value = Number(raw.replace(",", "."));
     return Number.isFinite(value) ? value : null;
   }
   function scientificValue(coeffElement, exponentElement, optional = false) {
@@ -323,13 +337,22 @@
 
     const mode = inputMode();
     const massEditable = mode === "mass";
-    $("massInputPanel").hidden = !massEditable;
-    $("numberInputPanel").hidden = massEditable;
-    $("massRangePanel").hidden = !massEditable;
-    $("numberRangePanel").hidden = massEditable;
+    const rangeEntry = concentrationEntryMode() === "range";
+    $("massUnitPanel").hidden = !massEditable;
+    $("massInputPanel").hidden = !massEditable || rangeEntry;
+    $("numberInputPanel").hidden = massEditable || rangeEntry;
+    $("rangeInputPanel").hidden = !rangeEntry;
+    $("massRangePanel").hidden = !massEditable || !rangeEntry;
+    $("numberRangePanel").hidden = massEditable || !rangeEntry;
     $("modeHint").textContent = massEditable
       ? "Enter certified metal mass only, excluding ligands, stabilizer, and solvent."
       : "Enter the supplier-certified particle-number concentration.";
+    $("entryHint").textContent = rangeEntry
+      ? "Enter both certified limits. Their midpoint becomes the working concentration."
+      : "Use this when the certificate reports one concentration value.";
+    $("surfaceKpiLabel").textContent = rangeEntry
+      ? "Midpoint geometric surface-area concentration"
+      : "Nominal geometric surface-area concentration";
     $("massRangeMinLabel").textContent = `Minimum metal mass concentration (${massUnitLabel()})`;
     $("massRangeMaxLabel").textContent = `Maximum metal mass concentration (${massUnitLabel()})`;
     scheduleCompute();
@@ -340,6 +363,7 @@
       .forEach((id) => { $(id).textContent = "-"; });
     $("outRange").textContent = "Not entered";
     $("resultTag").textContent = "Waiting for valid input…";
+    $("plannerLink").href = "solve/";
   }
 
   function compute() {
@@ -347,15 +371,27 @@
     showMessage(elements.warning, "");
     try {
       const mode = inputMode();
-      const nominal = mode === "mass"
-        ? selectedToMg(Number(elements.mass.value))
-        : scientificValue(elements.coeff, elements.exp);
-      const minimum = mode === "mass"
-        ? selectedToMg(parseOptional(elements.massRangeMin))
-        : scientificValue(elements.numberRangeMinCoeff, elements.numberRangeMinExp, true);
-      const maximum = mode === "mass"
-        ? selectedToMg(parseOptional(elements.massRangeMax))
-        : scientificValue(elements.numberRangeMaxCoeff, elements.numberRangeMaxExp, true);
+      const rangeEntry = concentrationEntryMode() === "range";
+      let minimum = null;
+      let maximum = null;
+      let nominal;
+      if (rangeEntry) {
+        minimum = mode === "mass"
+          ? selectedToMg(parseOptional(elements.massRangeMin))
+          : scientificValue(elements.numberRangeMinCoeff, elements.numberRangeMinExp);
+        maximum = mode === "mass"
+          ? selectedToMg(parseOptional(elements.massRangeMax))
+          : scientificValue(elements.numberRangeMaxCoeff, elements.numberRangeMaxExp);
+        if (minimum === null || maximum === null || !Number.isFinite(minimum) || !Number.isFinite(maximum)) {
+          throw new Error("Enter both minimum and maximum certified concentrations.");
+        }
+        if (minimum > maximum) throw new Error("Minimum concentration cannot exceed maximum concentration.");
+        nominal = (minimum + maximum) / 2;
+      } else {
+        nominal = mode === "mass"
+          ? selectedToMg(Number(elements.mass.value))
+          : scientificValue(elements.coeff, elements.exp);
+      }
       const range = calculateConcentrationRange(
         metalEl.value,
         sizeSpec(),
@@ -381,7 +417,7 @@
       $("midVolume").textContent = `${data.formatted.volume_cm3_per_particle} cm³`;
       $("midArea").textContent = `${data.formatted.area_cm2_per_particle} cm²`;
       $("midMass").textContent = `${data.formatted.mass_g_per_particle} g`;
-      $("resultTag").textContent = "Updated";
+      $("resultTag").textContent = rangeEntry ? "Updated from range midpoint" : "Updated";
 
       if (range.minimum || range.maximum) {
         const low = range.minimum ? fmt(range.minimum.outputs.surface_cm2_ml) : "not entered";
@@ -422,7 +458,7 @@
   document.querySelectorAll("input, select, textarea").forEach((element) => {
     element.addEventListener(element.type === "radio" || element.tagName === "SELECT" ? "change" : "input", scheduleCompute);
   });
-  document.querySelectorAll('input[name="mode"], input[name="sizeMode"]').forEach((element) => element.addEventListener("change", refreshUI));
+  document.querySelectorAll('input[name="mode"], input[name="sizeMode"], input[name="concentrationEntry"]').forEach((element) => element.addEventListener("change", refreshUI));
   elements.massUnit.addEventListener("change", convertMassUnit);
   refreshUI();
 })();

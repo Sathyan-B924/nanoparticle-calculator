@@ -518,7 +518,13 @@ details[open] > summary::before{ content:"\2212"; }
 .details-form .details-body{ margin-top:16px; }
 .details-form > .help{ margin:12px 0 0; line-height:1.45; }
 .size-panel[hidden]{ display:none; }
-.concentration-panel[hidden], .details-body[hidden]{ display:none; }
+.range-panel{
+  background:var(--panel);
+  border-radius:var(--radius-tile);
+  padding:16px;
+}
+.range-panel > .help{ margin:12px 0 0; line-height:1.45; }
+.concentration-panel[hidden], .range-panel[hidden], .row[hidden], .field[hidden], .details-body[hidden]{ display:none !important; }
 
 .action-link{
   display:block;

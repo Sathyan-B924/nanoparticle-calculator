@@ -7,7 +7,7 @@ A browser-based calculator for the **nominal geometric surface-area concentratio
 - Metal-mass input: particle count and area are derived from bulk-metal density and the particle-size distribution.
 - Particle-number input: mass and area are derived from the certified particle count and the particle-size distribution.
 - Dilution planning: the stock aliquot is calculated from target area concentration and final reaction volume.
-- Optional lot-specification ranges: stock-area and aliquot ranges are reported without implying false precision.
+- Certificate input can be either a single value or a min–max specification. Range mode uses the midpoint as the working estimate and retains the full range for stock-area and aliquot reporting.
 
 ## Particle-size modes
 
