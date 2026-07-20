@@ -119,6 +119,7 @@ sup{ font-size:0.7em; vertical-align:super; line-height:0; }
   gap:18px;
   align-items:start;
 }
+.grid-wide{ grid-template-columns:minmax(390px, 500px) 1fr; }
 
 .card{
   background:var(--card);
@@ -187,6 +188,11 @@ sup{ font-size:0.7em; vertical-align:super; line-height:0; }
   background:var(--panel);
   color:var(--muted);
 }
+textarea.control{
+  resize:vertical;
+  min-height:112px;
+  line-height:1.5;
+}
 
 input.mono, .control.mono{ font-size:15px; letter-spacing:0.01em; }
 
@@ -240,6 +246,7 @@ input.mono, .control.mono{ font-size:15px; letter-spacing:0.01em; }
   border-radius:10px;
   padding:4px;
 }
+.radios-wrap{ flex-wrap:wrap; }
 .radio{
   position:relative;
   display:inline-flex;
@@ -295,6 +302,30 @@ input.mono, .control.mono{ font-size:15px; letter-spacing:0.01em; }
   border-color:var(--danger-border);
   background:var(--danger-bg);
   color:var(--danger);
+}
+.msg.warning{
+  border-color:#e7d29d;
+  background:#fbf3dc;
+  color:#785a13;
+}
+
+.notice{
+  padding:12px 14px;
+  border-radius:var(--radius-ctrl);
+  border:1px solid var(--border);
+  font-size:12.5px;
+  line-height:1.5;
+}
+.app > .notice{ margin-bottom:18px; }
+.notice.info{
+  background:#f4f7f3;
+  border-color:#dce7db;
+  color:#536551;
+}
+.notice.caution{
+  background:var(--accent-wash);
+  border-color:#ead6ae;
+  color:#765a25;
 }
 
 /* ---------- Results KPIs ---------- */
@@ -481,6 +512,24 @@ details > summary::before{
 details[open] > summary::before{ content:"\2212"; }
 .details .table{ margin-top:14px; background:var(--card); }
 .details .table .r{ border-top-color:var(--border-2); }
+.details-form .details-body{ margin-top:16px; }
+.details-form > .help{ margin:12px 0 0; line-height:1.45; }
+.size-panel[hidden]{ display:none; }
+
+.action-link{
+  display:block;
+  padding:13px 16px;
+  border-radius:var(--radius-ctrl);
+  background:var(--accent);
+  color:#fff;
+  text-align:center;
+  text-decoration:none;
+  font-size:13px;
+  font-weight:600;
+  transition:background 140ms ease, transform 140ms ease;
+}
+.action-link:hover{ background:var(--accent-deep); }
+.action-link:active{ transform:translateY(1px); }
 
 /* ---------- Footer ---------- */
 .foot{
@@ -504,7 +553,7 @@ details[open] > summary::before{ content:"\2212"; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1000px){
-  .grid{ grid-template-columns:1fr; }
+  .grid, .grid-wide{ grid-template-columns:1fr; }
 }
 
 @media (max-width: 720px){
