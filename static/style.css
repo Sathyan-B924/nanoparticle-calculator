@@ -352,6 +352,9 @@ input.mono, .control.mono{ font-size:15px; letter-spacing:0.01em; }
   font-size:12px;
   font-weight:500;
   margin-bottom:auto;
+  width:calc(100% - 58px);
+  min-height:49px;
+  line-height:1.35;
 }
 .kpi-value{
   margin-top:12px;
@@ -515,6 +518,7 @@ details[open] > summary::before{ content:"\2212"; }
 .details-form .details-body{ margin-top:16px; }
 .details-form > .help{ margin:12px 0 0; line-height:1.45; }
 .size-panel[hidden]{ display:none; }
+.concentration-panel[hidden], .details-body[hidden]{ display:none; }
 
 .action-link{
   display:block;

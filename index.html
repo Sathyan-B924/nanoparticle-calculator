@@ -98,44 +98,64 @@
             <div class="hint" id="modeHint">Enter metal mass only, excluding ligands, stabilizer, and solvent.</div>
           </div>
 
-          <div class="row">
+          <div id="massInputPanel" class="concentration-panel">
             <label class="field">
               <div class="label-row">
-                <span class="label">Metal mass concentration</span>
+                <span class="label">Nominal metal mass concentration</span>
                 <select id="massUnit" class="control control-inline" title="Mass unit">
                   <option value="mg" selected>mg/mL</option>
                   <option value="ug">µg/mL</option>
                 </select>
               </div>
               <input id="mass" class="control" type="number" step="any" min="0" value="0.020" />
-              <span class="help">Editable in metal-mass mode</span>
+              <span class="help">Enter the nominal value stated on the supplier certificate.</span>
             </label>
+          </div>
 
+          <div id="numberInputPanel" class="concentration-panel" hidden>
             <div class="field">
-              <span class="label">Number concentration (particles/mL)</span>
+              <span class="label">Nominal particle-number concentration (particles/mL)</span>
               <div class="sci">
                 <input id="numCoeff" class="control control-sci mono" type="text" inputmode="decimal" value="6.54" />
                 <span class="sci-mid">× 10^</span>
                 <select id="numExp" class="control control-sci mono"></select>
               </div>
-              <span class="help">Editable in particle-number mode</span>
+              <span class="help">For example, enter 6.54 and choose 11 for 6.54 × 10¹¹ particles/mL.</span>
               <div class="smallbox"><div class="smallbox-k">Full value</div><div class="smallbox-v mono" id="numFull">-</div></div>
             </div>
           </div>
 
           <details class="details details-form">
-            <summary>Add supplier concentration range</summary>
-            <div class="row details-body">
+            <summary>Add certified min–max range</summary>
+            <div id="massRangePanel" class="row details-body">
               <label class="field">
-                <span class="label" id="rangeMinLabel">Minimum metal mass concentration (mg/mL)</span>
-                <input id="rangeMin" class="control mono" type="text" inputmode="decimal" placeholder="optional" />
+                <span class="label" id="massRangeMinLabel">Minimum metal mass concentration (mg/mL)</span>
+                <input id="massRangeMin" class="control mono" type="text" inputmode="decimal" placeholder="optional" />
               </label>
               <label class="field">
-                <span class="label" id="rangeMaxLabel">Maximum metal mass concentration (mg/mL)</span>
-                <input id="rangeMax" class="control mono" type="text" inputmode="decimal" placeholder="optional" />
+                <span class="label" id="massRangeMaxLabel">Maximum metal mass concentration (mg/mL)</span>
+                <input id="massRangeMax" class="control mono" type="text" inputmode="decimal" placeholder="optional" />
               </label>
             </div>
-            <p class="help">Use a lot-specific minimum/maximum or specification range. Converted values are not independent measurements.</p>
+            <div id="numberRangePanel" class="row details-body" hidden>
+              <div class="field">
+                <span class="label">Minimum number concentration (particles/mL)</span>
+                <div class="sci">
+                  <input id="numberRangeMinCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="optional" />
+                  <span class="sci-mid">× 10^</span>
+                  <select id="numberRangeMinExp" class="control control-sci mono"></select>
+                </div>
+              </div>
+              <div class="field">
+                <span class="label">Maximum number concentration (particles/mL)</span>
+                <div class="sci">
+                  <input id="numberRangeMaxCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="optional" />
+                  <span class="sci-mid">× 10^</span>
+                  <select id="numberRangeMaxExp" class="control control-sci mono"></select>
+                </div>
+              </div>
+            </div>
+            <p class="help">Keep the certificate's nominal value above. Add this only when the same certificate also supplies a minimum and/or maximum specification.</p>
           </details>
 
           <div id="sizeWarning" class="msg warning" hidden></div>
@@ -230,7 +250,10 @@
   const elements = {
     diameter: $("diameter"), mean: $("meanDiameter"), sd: $("diameterSd"), histogram: $("histogramData"),
     mass: $("mass"), massUnit: $("massUnit"), coeff: $("numCoeff"), exp: $("numExp"), numFull: $("numFull"),
-    rangeMin: $("rangeMin"), rangeMax: $("rangeMax"), error: $("error"), warning: $("sizeWarning"),
+    massRangeMin: $("massRangeMin"), massRangeMax: $("massRangeMax"),
+    numberRangeMinCoeff: $("numberRangeMinCoeff"), numberRangeMinExp: $("numberRangeMinExp"),
+    numberRangeMaxCoeff: $("numberRangeMaxCoeff"), numberRangeMaxExp: $("numberRangeMaxExp"),
+    error: $("error"), warning: $("sizeWarning"),
   };
   let timer = null;
   let previousMassUnit = elements.massUnit.value;
@@ -240,7 +263,10 @@
   }
   function inputMode() { return selectedRadio("mode", "mass"); }
   function sizeMode() { return selectedRadio("sizeMode", "single"); }
-  function selectedToMg(value) { return elements.massUnit.value === "ug" ? value * 1e-3 : value; }
+  function selectedToMg(value) {
+    if (value === null) return null;
+    return elements.massUnit.value === "ug" ? value * 1e-3 : value;
+  }
   function mgToSelected(value) { return elements.massUnit.value === "ug" ? value * 1e3 : value; }
   function massUnitLabel() { return elements.massUnit.value === "ug" ? "µg/mL" : "mg/mL"; }
 
@@ -254,14 +280,14 @@
     const raw = element.value.trim();
     return raw === "" ? null : Number(raw.replace(",", "."));
   }
-  function parseCoeff() {
-    const value = Number(elements.coeff.value.trim().replace(",", "."));
+  function parseCoeff(element) {
+    const value = Number(element.value.trim().replace(",", "."));
     return Number.isFinite(value) ? value : null;
   }
-  function currentNumber() { return parseCoeff() * Math.pow(10, Number(elements.exp.value)); }
-  function toSciParts(value) {
-    const exp = Math.floor(Math.log10(value));
-    return { coeff: value / Math.pow(10, exp), exp };
+  function scientificValue(coeffElement, exponentElement, optional = false) {
+    if (optional && coeffElement.value.trim() === "") return null;
+    const coefficient = parseCoeff(coeffElement);
+    return coefficient === null ? NaN : coefficient * Math.pow(10, Number(exponentElement.value));
   }
   function showMessage(element, message) {
     element.textContent = message || "";
@@ -271,13 +297,17 @@
     clearTimeout(timer);
     timer = setTimeout(compute, 120);
   }
-  function fillExponents() {
+  function fillExponentSelect(select, selected = 11) {
     for (let exponent = 3; exponent <= 20; exponent += 1) {
       const option = document.createElement("option");
       option.value = option.textContent = exponent;
-      elements.exp.appendChild(option);
+      select.appendChild(option);
     }
-    elements.exp.value = "11";
+    select.value = String(selected);
+  }
+  function fillExponents() {
+    [elements.exp, elements.numberRangeMinExp, elements.numberRangeMaxExp]
+      .forEach((select) => fillExponentSelect(select));
   }
 
   function refreshUI() {
@@ -293,18 +323,15 @@
 
     const mode = inputMode();
     const massEditable = mode === "mass";
-    elements.mass.readOnly = !massEditable;
-    elements.coeff.readOnly = massEditable;
-    elements.exp.disabled = massEditable;
-    elements.mass.classList.toggle("readonly", !massEditable);
-    elements.coeff.classList.toggle("readonly", massEditable);
-    elements.exp.classList.toggle("readonly", massEditable);
+    $("massInputPanel").hidden = !massEditable;
+    $("numberInputPanel").hidden = massEditable;
+    $("massRangePanel").hidden = !massEditable;
+    $("numberRangePanel").hidden = massEditable;
     $("modeHint").textContent = massEditable
       ? "Enter certified metal mass only, excluding ligands, stabilizer, and solvent."
       : "Enter the supplier-certified particle-number concentration.";
-    const rangeBasis = massEditable ? `metal mass concentration (${massUnitLabel()})` : "number concentration (particles/mL)";
-    $("rangeMinLabel").textContent = `Minimum ${rangeBasis}`;
-    $("rangeMaxLabel").textContent = `Maximum ${rangeBasis}`;
+    $("massRangeMinLabel").textContent = `Minimum metal mass concentration (${massUnitLabel()})`;
+    $("massRangeMaxLabel").textContent = `Maximum metal mass concentration (${massUnitLabel()})`;
     scheduleCompute();
   }
 
@@ -320,25 +347,25 @@
     showMessage(elements.warning, "");
     try {
       const mode = inputMode();
-      const nominal = mode === "mass" ? selectedToMg(Number(elements.mass.value)) : currentNumber();
-      const convertRange = (value) => mode === "mass" && value !== null ? selectedToMg(value) : value;
+      const nominal = mode === "mass"
+        ? selectedToMg(Number(elements.mass.value))
+        : scientificValue(elements.coeff, elements.exp);
+      const minimum = mode === "mass"
+        ? selectedToMg(parseOptional(elements.massRangeMin))
+        : scientificValue(elements.numberRangeMinCoeff, elements.numberRangeMinExp, true);
+      const maximum = mode === "mass"
+        ? selectedToMg(parseOptional(elements.massRangeMax))
+        : scientificValue(elements.numberRangeMaxCoeff, elements.numberRangeMaxExp, true);
       const range = calculateConcentrationRange(
         metalEl.value,
         sizeSpec(),
         mode,
         nominal,
-        convertRange(parseOptional(elements.rangeMin)),
-        convertRange(parseOptional(elements.rangeMax)),
+        minimum,
+        maximum,
       );
       const data = range.nominal;
 
-      if (mode === "mass") {
-        const parts = toSciParts(data.outputs.number_per_ml);
-        elements.exp.value = String(Math.max(3, Math.min(20, parts.exp)));
-        elements.coeff.value = fmt(data.outputs.number_per_ml / Math.pow(10, Number(elements.exp.value)));
-      } else {
-        elements.mass.value = fmt(mgToSelected(data.outputs.mass_mg_ml));
-      }
       elements.numFull.textContent = data.formatted.number_per_ml;
 
       $("outSurface").textContent = data.formatted.surface_cm2_ml;
@@ -360,10 +387,10 @@
         const low = range.minimum ? fmt(range.minimum.outputs.surface_cm2_ml) : "not entered";
         const high = range.maximum ? fmt(range.maximum.outputs.surface_cm2_ml) : "not entered";
         $("outRange").textContent = `${low} to ${high} cm²/mL`;
-      }
+      } else $("outRange").textContent = "Not entered";
       if (data.size.warning) showMessage(elements.warning, data.size.warning);
 
-      const params = new URLSearchParams({ stock: data.outputs.surface_cm2_ml, target: 0.096, volume: 2.5 });
+      const params = new URLSearchParams({ stock: data.outputs.surface_cm2_ml, target: 0.096, volume_ul: 2500 });
       if (range.minimum) params.set("min", range.minimum.outputs.surface_cm2_ml);
       if (range.maximum) params.set("max", range.maximum.outputs.surface_cm2_ml);
       $("plannerLink").href = `solve/?${params.toString()}`;
@@ -379,7 +406,7 @@
     if (Number.isFinite(value) && value > 0 && previousMassUnit !== elements.massUnit.value) {
       const mg = previousMassUnit === "ug" ? value * 1e-3 : value;
       elements.mass.value = fmt(elements.massUnit.value === "ug" ? mg * 1e3 : mg);
-      [elements.rangeMin, elements.rangeMax].forEach((element) => {
+      [elements.massRangeMin, elements.massRangeMax].forEach((element) => {
         const rangeValue = Number(element.value);
         if (Number.isFinite(rangeValue) && rangeValue > 0) {
           const rangeMg = previousMassUnit === "ug" ? rangeValue * 1e-3 : rangeValue;

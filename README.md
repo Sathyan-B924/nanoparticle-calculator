@@ -34,4 +34,4 @@ node tests/calc.test.js
 node tests/html-syntax.test.js
 ```
 
-Regression cases cover 20 nm Ag at 0.020 mg/mL, 20 nm Au at 6.54×10¹¹ particles/mL, a 20 ± 4 nm distribution, histogram moments, and the 0.096 cm²/mL in 2.5 mL dilution workflow.
+Regression cases cover 20 nm Ag at 0.020 mg/mL, 20 nm Au at 6.54×10¹¹ particles/mL, a 20 ± 4 nm distribution, histogram moments, and the 0.096 cm²/mL in 2500 µL dilution workflow.

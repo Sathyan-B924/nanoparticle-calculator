@@ -191,17 +191,17 @@ function calculateConcentrationRange(metalSymbol, sizeSpec, mode, nominal, minim
   return { nominal: nominalResult, minimum: minimumResult, maximum: maximumResult };
 }
 
-function planDilution(stockSurface_cm2_ml, targetSurface_cm2_ml, finalVolume_ml, stockMinimum, stockMaximum, reservedVolume_ml = 0) {
+function planDilution(stockSurface_cm2_ml, targetSurface_cm2_ml, finalVolume_ml, stockMinimum, stockMaximum, otherReagentVolume_ml = 0) {
   const stock = positiveNumber(stockSurface_cm2_ml, "Stock surface concentration");
   const target = positiveNumber(targetSurface_cm2_ml, "Target surface concentration");
   const finalVolume = positiveNumber(finalVolume_ml, "Final reaction volume");
-  const reservedVolume = nonnegativeNumber(reservedVolume_ml || 0, "Reserved reagent volume");
-  if (reservedVolume > finalVolume) throw new Error("Reserved reagent volume cannot exceed the final volume.");
+  const otherReagentVolume = nonnegativeNumber(otherReagentVolume_ml || 0, "Other reagent stock volume");
+  if (otherReagentVolume > finalVolume) throw new Error("Other reagent stock volume cannot exceed the final volume.");
 
   const totalArea_cm2 = target * finalVolume;
   const stockVolume_ml = totalArea_cm2 / stock;
-  if (stockVolume_ml + reservedVolume > finalVolume) {
-    throw new Error("Target cannot be reached: nanoparticle stock plus reserved reagents exceed the final volume.");
+  if (stockVolume_ml + otherReagentVolume > finalVolume) {
+    throw new Error("Target cannot be reached: nanoparticle stock plus other reagent stocks exceed the final volume.");
   }
 
   const lowStock = stockMinimum === null || stockMinimum === undefined || stockMinimum === ""
@@ -220,7 +220,7 @@ function planDilution(stockSurface_cm2_ml, targetSurface_cm2_ml, finalVolume_ml,
     totalArea_cm2,
     stockVolume_ml,
     stockVolume_ul: stockVolume_ml * 1000,
-    remainingVolume_ml: finalVolume - reservedVolume - stockVolume_ml,
+    remainingVolume_ml: finalVolume - otherReagentVolume - stockVolume_ml,
     aliquotMinimum_ml,
     aliquotMaximum_ml,
     aliquotMinimum_ul: aliquotMinimum_ml === null ? null : aliquotMinimum_ml * 1000,

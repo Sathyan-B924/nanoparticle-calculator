@@ -63,15 +63,15 @@
               <input id="targetSurface" class="control mono" type="number" step="any" min="0" value="0.096" />
             </label>
             <label class="field">
-              <span class="label">Final reaction volume (mL)</span>
-              <input id="finalVolume" class="control mono" type="number" step="any" min="0" value="2.5" />
+              <span class="label">Final reaction volume (µL)</span>
+              <input id="finalVolume" class="control mono" type="number" step="any" min="0" value="2500" />
             </label>
           </div>
 
           <label class="field">
-            <span class="label">Volume reserved for substrate, buffer, and reductant stocks (mL)</span>
+            <span class="label">Combined volume of other reagent stocks (µL)</span>
             <input id="reservedVolume" class="control mono" type="number" step="any" min="0" value="0" />
-            <span class="help">Optional. The remaining volume shown below is solvent/diluent after nanoparticle stock and these reagents.</span>
+            <span class="help">Optional. This does not change the nanoparticle aliquot. It is used only to calculate how much solvent/diluent to add after substrate, buffer, reductant, and nanoparticle stock.</span>
           </label>
 
           <div id="error" class="msg error" hidden></div>
@@ -104,10 +104,10 @@
           <div class="table">
             <div class="table-title">Pipetting plan</div>
             <div class="rows">
-              <div class="r"><div class="k">Stock aliquot</div><div class="v mono" id="outAliquotMl">-</div></div>
+              <div class="r"><div class="k">Nanoparticle stock aliquot</div><div class="v mono" id="outAliquotPlan">-</div></div>
               <div class="r"><div class="k">Aliquot range from stock specification</div><div class="v mono" id="outAliquotRange">Not entered</div></div>
-              <div class="r"><div class="k">Reserved reagent volume</div><div class="v mono" id="outReserved">-</div></div>
-              <div class="r"><div class="k">Remaining solvent/diluent</div><div class="v mono" id="outRemaining">-</div></div>
+              <div class="r"><div class="k">Other reagent stocks</div><div class="v mono" id="outReserved">-</div></div>
+              <div class="r"><div class="k">Solvent/diluent to add</div><div class="v mono" id="outRemaining">-</div></div>
               <div class="r"><div class="k">Final reaction volume</div><div class="v mono" id="outFinal">-</div></div>
             </div>
           </div>
@@ -142,23 +142,25 @@
     $("error").hidden = !message;
   }
   function clearOutputs() {
-    ["outAliquot","outArea","outAliquotMl","outReserved","outRemaining","outFinal"].forEach((id) => { $(id).textContent = "-"; });
+    ["outAliquot","outArea","outAliquotPlan","outReserved","outRemaining","outFinal"].forEach((id) => { $(id).textContent = "-"; });
     $("outAliquotRange").textContent = "Not entered";
     $("resultTag").textContent = "Waiting for valid input…";
   }
   function compute() {
     showError("");
     try {
+      const finalVolume_ul = Number(fields.final.value);
+      const otherReagents_ul = Number(fields.reserved.value || 0);
       const result = planDilution(
-        Number(fields.stock.value), Number(fields.target.value), Number(fields.final.value),
-        optionalNumber(fields.min), optionalNumber(fields.max), Number(fields.reserved.value || 0),
+        Number(fields.stock.value), Number(fields.target.value), finalVolume_ul / 1000,
+        optionalNumber(fields.min), optionalNumber(fields.max), otherReagents_ul / 1000,
       );
       $("outAliquot").textContent = fmt(result.stockVolume_ul);
       $("outArea").textContent = fmt(result.totalArea_cm2);
-      $("outAliquotMl").textContent = `${fmt(result.stockVolume_ml)} mL`;
-      $("outReserved").textContent = `${fmt(Number(fields.reserved.value || 0))} mL`;
-      $("outRemaining").textContent = `${fmt(result.remainingVolume_ml)} mL`;
-      $("outFinal").textContent = `${fmt(Number(fields.final.value))} mL`;
+      $("outAliquotPlan").textContent = `${fmt(result.stockVolume_ul)} µL`;
+      $("outReserved").textContent = `${fmt(otherReagents_ul)} µL`;
+      $("outRemaining").textContent = `${fmt(result.remainingVolume_ml * 1000)} µL`;
+      $("outFinal").textContent = `${fmt(finalVolume_ul)} µL`;
       if (result.aliquotMinimum_ul !== null || result.aliquotMaximum_ul !== null) {
         const low = result.aliquotMinimum_ul === null ? "not entered" : fmt(result.aliquotMinimum_ul);
         const high = result.aliquotMaximum_ul === null ? "not entered" : fmt(result.aliquotMaximum_ul);
@@ -177,11 +179,15 @@
   }
   function loadQuery() {
     const query = new URLSearchParams(location.search);
-    const mapping = { stock: fields.stock, min: fields.min, max: fields.max, target: fields.target, volume: fields.final };
+    const mapping = { stock: fields.stock, min: fields.min, max: fields.max, target: fields.target, volume_ul: fields.final };
     Object.entries(mapping).forEach(([key, field]) => {
       const value = query.get(key);
       if (value !== null && Number.isFinite(Number(value))) field.value = value;
     });
+    const legacyVolume_ml = query.get("volume");
+    if (!query.has("volume_ul") && legacyVolume_ml !== null && Number.isFinite(Number(legacyVolume_ml))) {
+      fields.final.value = String(Number(legacyVolume_ml) * 1000);
+    }
   }
 
   loadQuery();
