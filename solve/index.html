@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Find Stock Concentration — NP Calc</title>
+  <title>Dilution Planner — NP Calc</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -18,14 +18,14 @@
     <header class="topbar">
       <div class="brand">
         <div class="title">
-          <h1>Find stock concentration</h1>
-          <p>Enter a target surface concentration to get the required mass and particle count</p>
+          <h1>Nanoparticle Dilution Planner</h1>
+          <p>Convert stock geometric area into a reaction aliquot</p>
         </div>
       </div>
       <div class="topbar-right">
         <nav class="nav" aria-label="Pages">
-          <a class="nav-link" href="../">Surface Concentration</a>
-          <a class="nav-link active" href="./">Find Stock Concentration</a>
+          <a class="nav-link" href="../">Stock Calculator</a>
+          <a class="nav-link active" href="./">Dilution Planner</a>
         </nav>
       </div>
     </header>
@@ -33,282 +33,166 @@
     <main class="grid">
       <section class="card">
         <div class="card-head">
-          <h2>Inputs</h2>
-          <span class="muted">Enter a target. This page computes the required mass and particle count.</span>
+          <h2>Experiment inputs</h2>
+          <span class="muted">Values passed from the stock calculator are filled automatically.</span>
         </div>
 
         <form class="form" onsubmit="return false;">
-          <div class="row">
-            <label class="field">
-              <span class="label">Metal</span>
-              <select id="metal" class="control"></select>
-            </label>
+          <label class="field">
+            <span class="label">Working stock geometric surface-area concentration (cm²/mL)</span>
+            <input id="stockSurface" class="control mono" type="number" step="any" min="0" value="5.719733" />
+          </label>
 
-            <label class="field">
-              <span class="label">Diameter (nm)</span>
-              <input id="diameter" class="control" type="number" step="any" min="0" value="20" />
-            </label>
-          </div>
-
-          <div class="mode">
-            <div class="mode-left">
-              <div class="label">Target type</div>
-              <div class="radios">
-                <label class="radio">
-                  <input type="radio" name="tmode" value="surface" checked />
-                  <span>Surface (cm²/mL)</span>
-                </label>
-                <label class="radio">
-                  <input type="radio" name="tmode" value="molar" />
-                  <span>Molar</span>
-                </label>
-              </div>
+          <details class="details details-form">
+            <summary>Add supplier-derived stock range</summary>
+            <div class="row details-body">
+              <label class="field">
+                <span class="label">Minimum stock area (cm²/mL)</span>
+                <input id="stockMin" class="control mono" type="number" step="any" min="0" placeholder="optional" />
+              </label>
+              <label class="field">
+                <span class="label">Maximum stock area (cm²/mL)</span>
+                <input id="stockMax" class="control mono" type="number" step="any" min="0" placeholder="optional" />
+              </label>
             </div>
-            <div class="mode-right">
-              <div class="hint" id="modeHint">Surface target is editable. Results update automatically.</div>
-            </div>
-          </div>
+          </details>
 
           <div class="row">
             <label class="field">
-              <span class="label" id="targetLabel">Target surface concentration (cm²/mL)</span>
-              <input id="targetValue" class="control" type="number" step="any" min="0" placeholder="e.g., 0.50" />
-              <span class="help" id="targetHelp">Enter cm²/mL</span>
+              <span class="label">Target final area concentration (cm²/mL)</span>
+              <input id="targetSurface" class="control mono" type="number" step="any" min="0" value="0.096" />
             </label>
-
             <label class="field">
-              <div class="label-row">
-                <span class="label">Molar unit (only for molar target)</span>
-                <select id="molarUnit" class="control control-inline" title="Molar unit">
-                  <option value="pM">pM</option>
-                  <option value="nM" selected>nM</option>
-                  <option value="uM">uM</option>
-                  <option value="mM">mM</option>
-                  <option value="M">M</option>
-                </select>
-              </div>
-              <div class="msg" style="margin-top:0;">
-                <div class="muted">If you use a surface target, this setting is ignored.</div>
-              </div>
+              <span class="label">Final reaction volume (µL)</span>
+              <input id="finalVolume" class="control mono" type="number" step="any" min="0" value="2500" />
             </label>
           </div>
 
-          <div class="row">
-            <label class="field">
-              <div class="label-row">
-                <span class="label">Mass output unit</span>
-                <select id="massUnit" class="control control-inline" title="Mass output unit">
-                  <option value="mg" selected>mg/mL</option>
-                  <option value="ug">ug/mL</option>
-                </select>
-              </div>
-              <div class="msg" style="margin-top:0;">
-                <div class="muted">Only affects display. Calculations use mg/mL internally.</div>
-              </div>
-            </label>
+          <label class="field">
+            <span class="label">Combined volume of other reagent stocks (µL)</span>
+            <input id="reservedVolume" class="control mono" type="number" step="any" min="0" value="0" />
+            <span class="help">Optional. This value affects only the solvent/diluent volume; nanoparticle aliquot is determined by target area and final volume.</span>
+          </label>
 
-            <div class="field">
-              <span class="label">Status</span>
-              <div class="status">
-                <div id="error" class="msg error" hidden></div>
-              </div>
-            </div>
-          </div>
-
-          <noscript>
-            <div class="msg error">JavaScript is required for live calculation.</div>
-          </noscript>
+          <div id="error" class="msg error" hidden></div>
+          <noscript><div class="msg error">JavaScript is required for live calculation.</div></noscript>
         </form>
       </section>
 
       <section class="card">
         <div class="card-head">
-          <h2>Results</h2>
+          <h2>Dilution result</h2>
           <span class="muted" id="resultTag">Waiting for valid input…</span>
         </div>
 
         <div class="results">
           <div class="kpi">
-            <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outMass').textContent, this)">Copy</button>
-            <div class="kpi-label">Required mass concentration</div>
-            <div class="kpi-value mono" id="outMass">-</div>
-            <div class="kpi-unit" id="outMassUnit">mg/mL</div>
+            <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outAliquot').textContent, this)">Copy</button>
+            <div class="kpi-label">Nanoparticle stock aliquot</div>
+            <div class="kpi-value mono" id="outAliquot">-</div>
+            <div class="kpi-unit">µL</div>
           </div>
-
           <div class="kpi">
-            <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outNumber').textContent, this)">Copy</button>
-            <div class="kpi-label">Required number concentration</div>
-            <div class="kpi-value mono" id="outNumber">-</div>
-            <div class="kpi-unit">particles/mL</div>
+            <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outArea').textContent, this)">Copy</button>
+            <div class="kpi-label">Total nominal area added</div>
+            <div class="kpi-value mono" id="outArea">-</div>
+            <div class="kpi-unit">cm<sup>2</sup></div>
           </div>
         </div>
 
         <div class="tables">
           <div class="table">
-            <div class="table-title">Matched outputs (for reference)</div>
+            <div class="table-title">Pipetting plan</div>
             <div class="rows">
-              <div class="r"><div class="k">Surface concentration</div><div class="v mono" id="outSurface">-</div></div>
-              <div class="r"><div class="k">Molar concentration</div><div class="v mono" id="outMolar">-</div></div>
+              <div class="r"><div class="k">Nanoparticle stock aliquot</div><div class="v mono" id="outAliquotPlan">-</div></div>
+              <div class="r"><div class="k">Aliquot range from stock specification</div><div class="v mono" id="outAliquotRange">Not entered</div></div>
+              <div class="r"><div class="k">Other reagent stocks</div><div class="v mono" id="outReserved">-</div></div>
+              <div class="r"><div class="k">Solvent/diluent to add</div><div class="v mono" id="outRemaining">-</div></div>
+              <div class="r"><div class="k">Final reaction volume</div><div class="v mono" id="outFinal">-</div></div>
             </div>
           </div>
 
-          <div class="table">
-            <div class="table-title">Metal constants</div>
-            <div class="rows">
-              <div class="r"><div class="k">Metal</div><div class="v mono" id="outMetal">-</div></div>
-              <div class="r"><div class="k">Density</div><div class="v mono" id="outDensity">-</div></div>
-              <div class="r"><div class="k">Atomic weight</div><div class="v mono" id="outAW">-</div></div>
-            </div>
+          <div class="notice info">
+            The aliquot range is inverse to the stock-concentration range: the highest certified stock concentration gives the smallest required aliquot.
           </div>
-
-          <details class="details">
-            <summary>Show intermediate per-particle values</summary>
-            <div class="table">
-              <div class="table-title">Intermediate (per particle)</div>
-              <div class="rows">
-                <div class="r"><div class="k">Radius</div><div class="v mono" id="midRadius">-</div></div>
-                <div class="r"><div class="k">Volume</div><div class="v mono" id="midVolume">-</div></div>
-                <div class="r"><div class="k">Surface area</div><div class="v mono" id="midArea">-</div></div>
-                <div class="r"><div class="k">Mass</div><div class="v mono" id="midMass">-</div></div>
-              </div>
-            </div>
-          </details>
+          <div class="notice info">
+            Calculation scope: dilution by nominal geometric surface area. Aggregation and surface accessibility are outside this calculation.
+          </div>
         </div>
       </section>
     </main>
 
-    <footer class="foot">
-      <span class="muted">Tip: Surface target uses cm²/mL. Molar target uses particle molarity (not metal atom molarity).</span>
-    </footer>
+    <footer class="foot">Equation: V<sub>stock</sub> = C<sub>target</sub> × V<sub>final</sub> ÷ C<sub>stock</sub></footer>
   </div>
 
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-
-  // Populate metal dropdown from calc.js
-  const metalEl = $("metal");
-  Object.entries(METALS).forEach(([sym, m]) => {
-    const opt = document.createElement("option");
-    opt.value = sym;
-    opt.textContent = `${sym} (${m.name})`;
-    metalEl.appendChild(opt);
-  });
-
-  const diaEl        = $("diameter");
-  const targetValueEl= $("targetValue");
-  const molarUnitEl  = $("molarUnit");
-  const massUnitEl   = $("massUnit");
-  const targetLabelEl= $("targetLabel");
-  const targetHelpEl = $("targetHelp");
-  const modeHintEl   = $("modeHint");
-  const errorEl      = $("error");
-  const resultTagEl  = $("resultTag");
-  const outMass      = $("outMass");
-  const outMassUnit  = $("outMassUnit");
-  const outNumber    = $("outNumber");
-  const outSurface   = $("outSurface");
-  const outMolar     = $("outMolar");
-  const outMetal     = $("outMetal");
-  const outDensity   = $("outDensity");
-  const outAW        = $("outAW");
-  const midRadius    = $("midRadius");
-  const midVolume    = $("midVolume");
-  const midArea      = $("midArea");
-  const midMass      = $("midMass");
-
+  const fields = {
+    stock: $("stockSurface"), min: $("stockMin"), max: $("stockMax"),
+    target: $("targetSurface"), final: $("finalVolume"), reserved: $("reservedVolume"),
+  };
   let timer = null;
 
-  function getTargetMode() {
-    const r = document.querySelector('input[name="tmode"]:checked');
-    return r ? r.value : "surface";
+  function optionalNumber(element) {
+    return element.value.trim() === "" ? null : Number(element.value);
   }
-
-  function massUnitLabel() { return massUnitEl.value === "ug" ? "ug/mL" : "mg/mL"; }
-  function mgToSelected(mg){ return massUnitEl.value === "ug" ? mg * 1e3 : mg; }
-
-  function setError(text) {
-    if (!text) { errorEl.hidden = true; errorEl.textContent = ""; return; }
-    errorEl.textContent = text; errorEl.hidden = false;
+  function showError(message) {
+    $("error").textContent = message || "";
+    $("error").hidden = !message;
   }
-
   function clearOutputs() {
-    [outMass,outNumber,outSurface,outMolar,outMetal,outDensity,outAW,
-     midRadius,midVolume,midArea,midMass].forEach(el => el.textContent = "-");
-    outMassUnit.textContent = massUnitLabel();
-    resultTagEl.textContent = "Waiting for valid input…";
+    ["outAliquot","outArea","outAliquotPlan","outReserved","outRemaining","outFinal"].forEach((id) => { $(id).textContent = "-"; });
+    $("outAliquotRange").textContent = "Not entered";
+    $("resultTag").textContent = "Waiting for valid input…";
   }
-
-  function scheduleCompute() {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(compute, 180);
-  }
-
-  function refreshUI() {
-    const mode = getTargetMode();
-    if (mode === "surface") {
-      targetLabelEl.textContent = "Target surface concentration (cm²/mL)";
-      targetHelpEl.textContent  = "Enter cm²/mL";
-      modeHintEl.textContent    = "Surface target is editable. Results update automatically.";
-      molarUnitEl.disabled = true;
-      molarUnitEl.classList.add("readonly");
-    } else {
-      targetLabelEl.textContent = "Target molar concentration";
-      targetHelpEl.textContent  = "Enter particle molarity";
-      modeHintEl.textContent    = "Molar target is editable. Results update automatically.";
-      molarUnitEl.disabled = false;
-      molarUnitEl.classList.remove("readonly");
-    }
-    outMassUnit.textContent = massUnitLabel();
-    setError(""); scheduleCompute();
-  }
-
   function compute() {
-    setError("");
-    const metal = metalEl.value;
-    const dia   = Number(diaEl.value);
-
-    if (!Number.isFinite(dia) || dia <= 0) {
-      clearOutputs(); setError("Diameter must be > 0 nm."); return;
-    }
-
-    const tv = Number(targetValueEl.value);
-    if (!Number.isFinite(tv) || tv <= 0) {
-      clearOutputs(); resultTagEl.textContent = "Enter target value to calculate."; return;
-    }
-
+    showError("");
     try {
-      const data = solveTarget(metal, dia, getTargetMode(), tv, molarUnitEl.value);
-      const mg   = data.outputs.mass_mg_ml;
-
-      outMass.textContent    = fmt(mgToSelected(mg));
-      outMassUnit.textContent= massUnitLabel();
-      outNumber.textContent  = data.formatted.number_per_ml;
-      outSurface.textContent = data.formatted.surface_cm2_ml + " cm²/mL";
-      outMolar.textContent   = data.formatted.molar_nM + " nM";
-      outMetal.textContent   = `${data.metal.symbol} (${data.metal.name})`;
-      outDensity.textContent = `${data.metal.density_g_cm3} g/cm³`;
-      outAW.textContent      = `${data.metal.atomic_weight_g_mol} g/mol`;
-      midRadius.textContent  = data.formatted.radius_cm + " cm";
-      midVolume.textContent  = data.formatted.volume_cm3_per_particle + " cm³";
-      midArea.textContent    = data.formatted.area_cm2_per_particle + " cm²";
-      midMass.textContent    = data.formatted.mass_g_per_particle + " g";
-      resultTagEl.textContent = "Updated";
-    } catch(e) {
-      clearOutputs(); setError(String(e.message || e)); resultTagEl.textContent = "Error";
+      const finalVolume_ul = Number(fields.final.value);
+      const otherReagents_ul = Number(fields.reserved.value || 0);
+      const result = planDilution(
+        Number(fields.stock.value), Number(fields.target.value), finalVolume_ul / 1000,
+        optionalNumber(fields.min), optionalNumber(fields.max), otherReagents_ul / 1000,
+      );
+      $("outAliquot").textContent = fmt(result.stockVolume_ul);
+      $("outArea").textContent = fmt(result.totalArea_cm2);
+      $("outAliquotPlan").textContent = `${fmt(result.stockVolume_ul)} µL`;
+      $("outReserved").textContent = `${fmt(otherReagents_ul)} µL`;
+      $("outRemaining").textContent = `${fmt(result.remainingVolume_ml * 1000)} µL`;
+      $("outFinal").textContent = `${fmt(finalVolume_ul)} µL`;
+      if (result.aliquotMinimum_ul !== null || result.aliquotMaximum_ul !== null) {
+        const low = result.aliquotMinimum_ul === null ? "not entered" : fmt(result.aliquotMinimum_ul);
+        const high = result.aliquotMaximum_ul === null ? "not entered" : fmt(result.aliquotMaximum_ul);
+        $("outAliquotRange").textContent = `${low} to ${high} µL`;
+      }
+      $("resultTag").textContent = "Updated";
+    } catch (error) {
+      clearOutputs();
+      showError(String(error.message || error));
+      $("resultTag").textContent = "Check inputs";
+    }
+  }
+  function scheduleCompute() {
+    clearTimeout(timer);
+    timer = setTimeout(compute, 100);
+  }
+  function loadQuery() {
+    const query = new URLSearchParams(location.search);
+    const mapping = { stock: fields.stock, min: fields.min, max: fields.max, target: fields.target, volume_ul: fields.final };
+    Object.entries(mapping).forEach(([key, field]) => {
+      const value = query.get(key);
+      if (value !== null && Number.isFinite(Number(value))) field.value = value;
+    });
+    const legacyVolume_ml = query.get("volume");
+    if (!query.has("volume_ul") && legacyVolume_ml !== null && Number.isFinite(Number(legacyVolume_ml))) {
+      fields.final.value = String(Number(legacyVolume_ml) * 1000);
     }
   }
 
-  targetValueEl.value = "0.50";
-
-  metalEl.addEventListener("change", scheduleCompute);
-  diaEl.addEventListener("input", scheduleCompute);
-  targetValueEl.addEventListener("input", scheduleCompute);
-  molarUnitEl.addEventListener("change", scheduleCompute);
-  massUnitEl.addEventListener("change", refreshUI);
-  document.querySelectorAll('input[name="tmode"]').forEach(r => r.addEventListener("change", refreshUI));
-
-  refreshUI();
+  loadQuery();
+  Object.values(fields).forEach((field) => field.addEventListener("input", scheduleCompute));
+  compute();
 })();
 </script>
 </body>

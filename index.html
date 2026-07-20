@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Surface Concentration — NP Calc</title>
+  <title>Nominal Geometric Surface Area — NP Calc</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -18,97 +18,163 @@
     <header class="topbar">
       <div class="brand">
         <div class="title">
-          <h1>Nanoparticle Concentration Calculator</h1>
-          <p>Single-metal, spherical nanoparticles</p>
+          <h1>Nanoparticle Surface-Area Calculator</h1>
+          <p>Nominal geometric area for solid spherical nanoparticles</p>
         </div>
       </div>
       <div class="topbar-right">
         <nav class="nav" aria-label="Pages">
-          <a class="nav-link active" href="./">Surface Concentration</a>
-          <a class="nav-link" href="solve/">Find Stock Concentration</a>
+          <a class="nav-link active" href="./">Stock Calculator</a>
+          <a class="nav-link" href="solve/">Dilution Planner</a>
         </nav>
       </div>
     </header>
 
-    <main class="grid">
-      <!-- Inputs -->
+    <div class="notice info">
+      Geometric metal area uses the TEM metal-core size. DLS hydrodynamic size includes the ligand/solvent shell and is excluded from the calculation.
+    </div>
+
+    <main class="grid grid-wide">
       <section class="card">
         <div class="card-head">
-          <h2>Inputs</h2>
-          <span class="muted">Edit one concentration, the other updates automatically.</span>
+          <h2>Stock inputs</h2>
+          <span class="muted">Concentration basis corresponds to the quantity reported on the lot certificate.</span>
         </div>
 
         <form class="form" onsubmit="return false;">
-          <div class="row">
-            <label class="field">
-              <span class="label">Metal</span>
-              <select id="metal" class="control"></select>
-            </label>
+          <label class="field">
+            <span class="label">Metal</span>
+            <select id="metal" class="control"></select>
+          </label>
 
+          <div class="mode">
+            <div class="mode-left">
+              <div class="label">Core-size data</div>
+              <div class="radios radios-wrap">
+                <label class="radio"><input type="radio" name="sizeMode" value="single" checked /><span>Single diameter</span></label>
+                <label class="radio"><input type="radio" name="sizeMode" value="normal" /><span>Mean ± SD</span></label>
+                <label class="radio"><input type="radio" name="sizeMode" value="histogram" /><span>TEM histogram</span></label>
+              </div>
+            </div>
+            <div class="hint" id="sizeHint">Model: all particles have the entered core diameter.</div>
+          </div>
+
+          <div id="sizeSingle" class="size-panel">
             <label class="field">
-              <span class="label">Diameter (nm)</span>
+              <span class="label">TEM core diameter (nm)</span>
               <input id="diameter" class="control" type="number" step="any" min="0" value="20" />
+            </label>
+          </div>
+
+          <div id="sizeNormal" class="size-panel" hidden>
+            <div class="row">
+              <label class="field">
+                <span class="label">Number-weighted mean (nm)</span>
+                <input id="meanDiameter" class="control" type="number" step="any" min="0" value="20" />
+              </label>
+              <label class="field">
+                <span class="label">Standard deviation (nm)</span>
+                <input id="diameterSd" class="control" type="number" step="any" min="0" value="4" />
+              </label>
+            </div>
+          </div>
+
+          <div id="sizeHistogram" class="size-panel" hidden>
+            <label class="field">
+              <span class="label">Number-weighted TEM data: diameter, weight</span>
+              <textarea id="histogramData" class="control mono" rows="6" spellcheck="false" placeholder="diameter_nm, count&#10;16, 8&#10;18, 21&#10;20, 34&#10;22, 25&#10;24, 12"></textarea>
+              <span class="help">Paste two columns from a CSV or histogram. Weights may be counts or relative frequencies.</span>
             </label>
           </div>
 
           <div class="mode">
             <div class="mode-left">
-              <div class="label">Input mode</div>
+              <div class="label">Certified concentration basis</div>
               <div class="radios">
-                <label class="radio">
-                  <input type="radio" name="mode" value="mass" checked />
-                  <span>Mass</span>
-                </label>
-                <label class="radio">
-                  <input type="radio" name="mode" value="number" />
-                  <span>Number</span>
-                </label>
+                <label class="radio"><input type="radio" name="mode" value="mass" checked /><span>Metal mass</span></label>
+                <label class="radio"><input type="radio" name="mode" value="number" /><span>Particle number</span></label>
               </div>
             </div>
-            <div class="mode-right">
-              <div class="hint" id="modeHint">Mass is editable. Number is auto-calculated.</div>
-            </div>
+            <div class="hint" id="modeHint">Enter metal mass only, excluding ligands, stabilizer, and solvent.</div>
           </div>
 
-          <div class="row">
-            <label class="field">
-              <div class="label-row">
-                <span class="label">Mass concentration</span>
-                <select id="massUnit" class="control control-inline" title="Mass unit">
-                  <option value="mg" selected>mg/mL</option>
-                  <option value="ug">ug/mL</option>
-                </select>
+          <div class="mode">
+            <div class="mode-left">
+              <div class="label">Certificate concentration format</div>
+              <div class="radios">
+                <label class="radio"><input type="radio" name="concentrationEntry" value="single" checked /><span>Single value</span></label>
+                <label class="radio"><input type="radio" name="concentrationEntry" value="range" /><span>Min–max range</span></label>
               </div>
-              <input id="mass" class="control" type="number" step="any" min="0" placeholder="e.g., 0.10" />
-              <span class="help">Editable in mass mode</span>
-            </label>
+            </div>
+            <div class="hint" id="entryHint">For certificates reporting one concentration value.</div>
+          </div>
 
+          <label id="massUnitPanel" class="field">
+            <span class="label">Metal mass concentration unit</span>
+            <select id="massUnit" class="control" title="Mass unit">
+              <option value="mg" selected>mg/mL</option>
+              <option value="ug">µg/mL</option>
+            </select>
+          </label>
+
+          <div id="massInputPanel" class="concentration-panel">
+            <label class="field">
+              <span class="label">Certified metal mass concentration</span>
+              <input id="mass" class="control" type="number" step="any" min="0" value="0.020" />
+            </label>
+          </div>
+
+          <div id="numberInputPanel" class="concentration-panel" hidden>
             <div class="field">
-              <span class="label">Number concentration (particles/mL)</span>
+              <span class="label">Certified particle-number concentration (particles/mL)</span>
               <div class="sci">
-                <input id="numCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="e.g., 2.12" />
+                <input id="numCoeff" class="control control-sci mono" type="text" inputmode="decimal" value="6.54" />
                 <span class="sci-mid">× 10^</span>
                 <select id="numExp" class="control control-sci mono"></select>
               </div>
-              <span class="help">Editable in number mode</span>
-              <div class="smallbox">
-                <div class="smallbox-k">Full value</div>
-                <div class="smallbox-v mono" id="numFull">-</div>
-              </div>
+              <span class="help">For example, enter 6.54 and choose 11 for 6.54 × 10¹¹ particles/mL.</span>
+              <div class="smallbox"><div class="smallbox-k">Full value</div><div class="smallbox-v mono" id="numFull">-</div></div>
             </div>
           </div>
 
-          <div class="status">
-            <div id="error" class="msg error" hidden></div>
+          <div id="rangeInputPanel" class="range-panel" hidden>
+            <div id="massRangePanel" class="row">
+              <label class="field">
+                <span class="label" id="massRangeMinLabel">Minimum metal mass concentration (mg/mL)</span>
+                <input id="massRangeMin" class="control mono" type="text" inputmode="decimal" placeholder="required" />
+              </label>
+              <label class="field">
+                <span class="label" id="massRangeMaxLabel">Maximum metal mass concentration (mg/mL)</span>
+                <input id="massRangeMax" class="control mono" type="text" inputmode="decimal" placeholder="required" />
+              </label>
+            </div>
+            <div id="numberRangePanel" class="row" hidden>
+              <div class="field">
+                <span class="label">Minimum number concentration (particles/mL)</span>
+                <div class="sci">
+                  <input id="numberRangeMinCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="required" />
+                  <span class="sci-mid">× 10^</span>
+                  <select id="numberRangeMinExp" class="control control-sci mono"></select>
+                </div>
+              </div>
+              <div class="field">
+                <span class="label">Maximum number concentration (particles/mL)</span>
+                <div class="sci">
+                  <input id="numberRangeMaxCoeff" class="control control-sci mono" type="text" inputmode="decimal" placeholder="required" />
+                  <span class="sci-mid">× 10^</span>
+                  <select id="numberRangeMaxExp" class="control control-sci mono"></select>
+                </div>
+              </div>
+            </div>
+            <p class="help">Both limits are required. Their midpoint is used as the working concentration, while the full certified range is retained in the results and dilution planner.</p>
           </div>
 
-          <noscript>
-            <div class="msg error">JavaScript is required for live calculation.</div>
-          </noscript>
+          <div id="sizeWarning" class="msg warning" hidden></div>
+          <div id="error" class="msg error" hidden></div>
+          <noscript><div class="msg error">JavaScript is required for live calculation.</div></noscript>
         </form>
       </section>
 
-      <!-- Results -->
       <section class="card">
         <div class="card-head">
           <h2>Results</h2>
@@ -118,11 +184,10 @@
         <div class="results">
           <div class="kpi">
             <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outSurface').textContent, this)">Copy</button>
-            <div class="kpi-label">Surface concentration</div>
+            <div class="kpi-label" id="surfaceKpiLabel">Nominal geometric surface-area concentration</div>
             <div class="kpi-value mono" id="outSurface">-</div>
             <div class="kpi-unit">cm<sup>2</sup>/mL</div>
           </div>
-
           <div class="kpi">
             <button class="copy-btn" onclick="copyToClipboard(document.getElementById('outMolar').textContent, this)">Copy</button>
             <div class="kpi-label">Nanoparticle molar concentration</div>
@@ -133,10 +198,20 @@
 
         <div class="tables">
           <div class="table">
-            <div class="table-title">Main outputs</div>
+            <div class="table-title">Stock outputs</div>
             <div class="rows">
+              <div class="r"><div class="k">Supplier-derived area range</div><div class="v mono" id="outRange">Not entered</div></div>
               <div class="r"><div class="k">Number concentration</div><div class="v mono" id="outNumber">-</div></div>
-              <div class="r"><div class="k">Mass concentration</div><div class="v mono" id="outMass">-</div></div>
+              <div class="r"><div class="k">Metal mass concentration</div><div class="v mono" id="outMass">-</div></div>
+            </div>
+          </div>
+
+          <div class="table">
+            <div class="table-title">Size model</div>
+            <div class="rows">
+              <div class="r"><div class="k">Input</div><div class="v mono" id="outSizeModel">-</div></div>
+              <div class="r"><div class="k">Mean d²</div><div class="v mono" id="outD2">-</div></div>
+              <div class="r"><div class="k">Mean d³</div><div class="v mono" id="outD3">-</div></div>
             </div>
           </div>
 
@@ -144,233 +219,248 @@
             <div class="table-title">Metal constants</div>
             <div class="rows">
               <div class="r"><div class="k">Metal</div><div class="v mono" id="outMetal">-</div></div>
-              <div class="r"><div class="k">Density</div><div class="v mono" id="outDensity">-</div></div>
-              <div class="r"><div class="k">Atomic weight</div><div class="v mono" id="outAW">-</div></div>
+              <div class="r"><div class="k">Bulk-metal density</div><div class="v mono" id="outDensity">-</div></div>
             </div>
           </div>
 
           <details class="details">
-            <summary>Show intermediate per-particle values</summary>
+            <summary>Show distribution-averaged per-particle values</summary>
             <div class="table">
-              <div class="table-title">Intermediate (per particle)</div>
               <div class="rows">
-                <div class="r"><div class="k">Radius</div><div class="v mono" id="midRadius">-</div></div>
-                <div class="r"><div class="k">Volume</div><div class="v mono" id="midVolume">-</div></div>
-                <div class="r"><div class="k">Surface area</div><div class="v mono" id="midArea">-</div></div>
-                <div class="r"><div class="k">Mass</div><div class="v mono" id="midMass">-</div></div>
+                <div class="r"><div class="k">Mean radius</div><div class="v mono" id="midRadius">-</div></div>
+                <div class="r"><div class="k">Mean volume</div><div class="v mono" id="midVolume">-</div></div>
+                <div class="r"><div class="k">Mean surface area</div><div class="v mono" id="midArea">-</div></div>
+                <div class="r"><div class="k">Mean particle mass</div><div class="v mono" id="midMass">-</div></div>
               </div>
             </div>
           </details>
-        </div>
 
-        <div style="margin-top:16px;font-size:12px;color:var(--muted);">
-          Have a target surface concentration? <a href="solve/">Find the required stock →</a>
+          <div class="notice info">
+            Calculation scope: nominal geometric area of isolated solid spherical metal cores. Ligands, aggregation, fusion, surface roughness, and site accessibility are outside this calculation.
+          </div>
+
+          <a id="plannerLink" class="action-link" href="solve/">Plan a dilution using this result →</a>
         </div>
       </section>
     </main>
 
-    <footer class="foot">
-      <span class="muted">Tip: 1 nm = 1e-7 cm. Sphere assumed.</span>
-    </footer>
+    <footer class="foot">Certificate input: a single reported value, or the midpoint and bounds of a min–max range.</footer>
   </div>
 
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-
-  // Populate metal dropdown from calc.js
   const metalEl = $("metal");
-  Object.entries(METALS).forEach(([sym, m]) => {
-    const opt = document.createElement("option");
-    opt.value = sym;
-    opt.textContent = `${sym} (${m.name})`;
-    metalEl.appendChild(opt);
+  Object.entries(METALS).forEach(([symbol, metal]) => {
+    const option = document.createElement("option");
+    option.value = symbol;
+    option.textContent = `${symbol} (${metal.name})`;
+    metalEl.appendChild(option);
   });
 
-  const diaEl      = $("diameter");
-  const massEl     = $("mass");
-  const massUnitEl = $("massUnit");
-  const coeffEl    = $("numCoeff");
-  const expEl      = $("numExp");
-  const numFullEl  = $("numFull");
-  const errorEl    = $("error");
-  const modeHintEl = $("modeHint");
-  const resultTagEl= $("resultTag");
-  const outSurface = $("outSurface");
-  const outMolar   = $("outMolar");
-  const outNumber  = $("outNumber");
-  const outMass    = $("outMass");
-  const outMetal   = $("outMetal");
-  const outDensity = $("outDensity");
-  const outAW      = $("outAW");
-  const midRadius  = $("midRadius");
-  const midVolume  = $("midVolume");
-  const midArea    = $("midArea");
-  const midMass    = $("midMass");
-
+  const elements = {
+    diameter: $("diameter"), mean: $("meanDiameter"), sd: $("diameterSd"), histogram: $("histogramData"),
+    mass: $("mass"), massUnit: $("massUnit"), coeff: $("numCoeff"), exp: $("numExp"), numFull: $("numFull"),
+    massRangeMin: $("massRangeMin"), massRangeMax: $("massRangeMax"),
+    numberRangeMinCoeff: $("numberRangeMinCoeff"), numberRangeMinExp: $("numberRangeMinExp"),
+    numberRangeMaxCoeff: $("numberRangeMaxCoeff"), numberRangeMaxExp: $("numberRangeMaxExp"),
+    error: $("error"), warning: $("sizeWarning"),
+  };
   let timer = null;
-  let prevMassUnit = massUnitEl.value;
+  let previousMassUnit = elements.massUnit.value;
 
-  function getMode() {
-    const r = document.querySelector('input[name="mode"]:checked');
-    return r ? r.value : "mass";
+  function selectedRadio(name, fallback) {
+    return document.querySelector(`input[name="${name}"]:checked`)?.value || fallback;
+  }
+  function inputMode() { return selectedRadio("mode", "mass"); }
+  function concentrationEntryMode() { return selectedRadio("concentrationEntry", "single"); }
+  function sizeMode() { return selectedRadio("sizeMode", "single"); }
+  function selectedToMg(value) {
+    if (value === null) return null;
+    return elements.massUnit.value === "ug" ? value * 1e-3 : value;
+  }
+  function mgToSelected(value) { return elements.massUnit.value === "ug" ? value * 1e3 : value; }
+  function massUnitLabel() { return elements.massUnit.value === "ug" ? "µg/mL" : "mg/mL"; }
+
+  function sizeSpec() {
+    if (sizeMode() === "normal") return { mode: "normal", mean_nm: Number(elements.mean.value), sd_nm: Number(elements.sd.value) };
+    if (sizeMode() === "histogram") return { mode: "histogram", histogram_text: elements.histogram.value };
+    return { mode: "single", diameter_nm: Number(elements.diameter.value) };
   }
 
-  function massUnitLabel() { return massUnitEl.value === "ug" ? "ug/mL" : "mg/mL"; }
-  function mgToSelected(mg){ return massUnitEl.value === "ug" ? mg * 1e3 : mg; }
-  function selectedToMg(x) { return massUnitEl.value === "ug" ? x * 1e-3 : x; }
+  function parseOptional(element) {
+    const raw = element.value.trim();
+    return raw === "" ? null : Number(raw.replace(",", "."));
+  }
+  function parseCoeff(element) {
+    const raw = element.value.trim();
+    if (raw === "") return null;
+    const value = Number(raw.replace(",", "."));
+    return Number.isFinite(value) ? value : null;
+  }
+  function scientificValue(coeffElement, exponentElement, optional = false) {
+    if (optional && coeffElement.value.trim() === "") return null;
+    const coefficient = parseCoeff(coeffElement);
+    return coefficient === null ? NaN : coefficient * Math.pow(10, Number(exponentElement.value));
+  }
+  function showMessage(element, message) {
+    element.textContent = message || "";
+    element.hidden = !message;
+  }
+  function scheduleCompute() {
+    clearTimeout(timer);
+    timer = setTimeout(compute, 120);
+  }
+  function fillExponentSelect(select, selected = 11) {
+    for (let exponent = 3; exponent <= 20; exponent += 1) {
+      const option = document.createElement("option");
+      option.value = option.textContent = exponent;
+      select.appendChild(option);
+    }
+    select.value = String(selected);
+  }
+  function fillExponents() {
+    [elements.exp, elements.numberRangeMinExp, elements.numberRangeMaxExp]
+      .forEach((select) => fillExponentSelect(select));
+  }
 
-  function setError(text) {
-    if (!text) { errorEl.hidden = true; errorEl.textContent = ""; return; }
-    errorEl.textContent = text; errorEl.hidden = false;
+  function refreshUI() {
+    const sm = sizeMode();
+    $("sizeSingle").hidden = sm !== "single";
+    $("sizeNormal").hidden = sm !== "normal";
+    $("sizeHistogram").hidden = sm !== "histogram";
+    $("sizeHint").textContent = sm === "single"
+      ? "Model: all particles have the entered core diameter."
+      : sm === "normal"
+        ? "Uses analytical number-weighted moments for an arithmetic mean and SD."
+        : "Uses the number-weighted second and third moments of your TEM data.";
+
+    const mode = inputMode();
+    const massEditable = mode === "mass";
+    const rangeEntry = concentrationEntryMode() === "range";
+    $("massUnitPanel").hidden = !massEditable;
+    $("massInputPanel").hidden = !massEditable || rangeEntry;
+    $("numberInputPanel").hidden = massEditable || rangeEntry;
+    $("rangeInputPanel").hidden = !rangeEntry;
+    $("massRangePanel").hidden = !massEditable || !rangeEntry;
+    $("numberRangePanel").hidden = massEditable || !rangeEntry;
+    $("modeHint").textContent = massEditable
+      ? "Enter certified metal mass only, excluding ligands, stabilizer, and solvent."
+      : "Enter the supplier-certified particle-number concentration.";
+    $("entryHint").textContent = rangeEntry
+      ? "Enter both certified limits. Their midpoint becomes the working concentration."
+      : "For certificates reporting one concentration value.";
+    $("surfaceKpiLabel").textContent = rangeEntry
+      ? "Midpoint geometric surface-area concentration"
+      : "Nominal geometric surface-area concentration";
+    $("massRangeMinLabel").textContent = `Minimum metal mass concentration (${massUnitLabel()})`;
+    $("massRangeMaxLabel").textContent = `Maximum metal mass concentration (${massUnitLabel()})`;
+    scheduleCompute();
   }
 
   function clearOutputs() {
-    [outSurface,outMolar,outNumber,outMass,outMetal,outDensity,outAW,
-     midRadius,midVolume,midArea,midMass].forEach(el => el.textContent = "-");
-    resultTagEl.textContent = "Waiting for valid input…";
-  }
-
-  function scheduleCompute() {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(compute, 180);
-  }
-
-  function fillExponentOptions() {
-    expEl.innerHTML = "";
-    for (let e = 6; e <= 18; e++) {
-      const opt = document.createElement("option");
-      opt.value = opt.textContent = String(e);
-      expEl.appendChild(opt);
-    }
-    expEl.value = "12";
-  }
-
-  function refreshModeUI() {
-    const mode = getMode();
-    if (mode === "mass") {
-      massEl.readOnly = false; coeffEl.readOnly = true; expEl.disabled = true;
-      massEl.classList.remove("readonly"); coeffEl.classList.add("readonly"); expEl.classList.add("readonly");
-      modeHintEl.textContent = `Mass (${massUnitLabel()}) is editable. Number is auto-calculated.`;
-    } else {
-      massEl.readOnly = true; coeffEl.readOnly = false; expEl.disabled = false;
-      massEl.classList.add("readonly"); coeffEl.classList.remove("readonly"); expEl.classList.remove("readonly");
-      modeHintEl.textContent = `Number is editable. Mass (${massUnitLabel()}) is auto-calculated.`;
-    }
-    setError(""); scheduleCompute();
-  }
-
-  function parseCoeff() {
-    const s = String(coeffEl.value || "").trim().replace(",", ".");
-    if (!s) return null;
-    const x = Number(s);
-    return Number.isFinite(x) ? x : null;
-  }
-
-  function fromSciParts(c, e) { return c * Math.pow(10, e); }
-
-  function toSciParts(x) {
-    if (!(x > 0) || !Number.isFinite(x)) return null;
-    const exp = Math.floor(Math.log10(x));
-    return { coeff: x / Math.pow(10, exp), exp };
-  }
-
-  function setFullValueFromCoeffExp() {
-    const c = parseCoeff(), e = Number(expEl.value);
-    if (c === null || !(c > 0) || !Number.isFinite(e)) { numFullEl.textContent = "-"; return; }
-    const n = fromSciParts(c, e);
-    numFullEl.textContent = (Number.isFinite(n) && n > 0) ? n.toExponential(6).replace("+","") : "-";
+    ["outSurface","outMolar","outNumber","outMass","outSizeModel","outD2","outD3","outMetal","outDensity","midRadius","midVolume","midArea","midMass"]
+      .forEach((id) => { $(id).textContent = "-"; });
+    $("outRange").textContent = "Not entered";
+    $("resultTag").textContent = "Waiting for valid input…";
+    $("plannerLink").href = "solve/";
   }
 
   function compute() {
-    setError("");
-    const metal = metalEl.value;
-    const dia   = Number(diaEl.value);
-
-    if (!Number.isFinite(dia) || dia <= 0) {
-      clearOutputs(); setError("Diameter must be > 0 nm."); return;
-    }
-
-    const mode = getMode();
-    let mass_mg_ml = null, number_per_ml = null;
-
-    if (mode === "mass") {
-      const mSel = Number(massEl.value);
-      if (!Number.isFinite(mSel) || mSel <= 0) {
-        clearOutputs(); resultTagEl.textContent = "Enter mass concentration to calculate."; return;
-      }
-      mass_mg_ml = selectedToMg(mSel);
-    } else {
-      const c = parseCoeff(), e = Number(expEl.value);
-      setFullValueFromCoeffExp();
-      if (c === null || c <= 0) {
-        clearOutputs(); resultTagEl.textContent = "Enter coefficient to calculate."; return;
-      }
-      const n = fromSciParts(c, e);
-      if (!Number.isFinite(n) || n <= 0) {
-        clearOutputs(); resultTagEl.textContent = "Invalid number concentration."; return;
-      }
-      number_per_ml = n;
-    }
-
+    showMessage(elements.error, "");
+    showMessage(elements.warning, "");
     try {
-      const data = calculate(metal, dia, mode, mass_mg_ml, number_per_ml);
-
-      if (mode === "mass") {
-        const sp = toSciParts(data.outputs.number_per_ml);
-        if (sp) {
-          const minE = Number(expEl.options[0].value);
-          const maxE = Number(expEl.options[expEl.options.length-1].value);
-          const e2 = Math.max(minE, Math.min(maxE, sp.exp));
-          expEl.value = String(e2);
-          coeffEl.value = (data.outputs.number_per_ml / Math.pow(10, e2)).toPrecision(6).replace(/\.?0+$/,"");
+      const mode = inputMode();
+      const rangeEntry = concentrationEntryMode() === "range";
+      let minimum = null;
+      let maximum = null;
+      let nominal;
+      if (rangeEntry) {
+        minimum = mode === "mass"
+          ? selectedToMg(parseOptional(elements.massRangeMin))
+          : scientificValue(elements.numberRangeMinCoeff, elements.numberRangeMinExp);
+        maximum = mode === "mass"
+          ? selectedToMg(parseOptional(elements.massRangeMax))
+          : scientificValue(elements.numberRangeMaxCoeff, elements.numberRangeMaxExp);
+        if (minimum === null || maximum === null || !Number.isFinite(minimum) || !Number.isFinite(maximum)) {
+          throw new Error("Enter both minimum and maximum certified concentrations.");
         }
-        numFullEl.textContent = data.formatted.number_per_ml;
+        if (minimum > maximum) throw new Error("Minimum concentration cannot exceed maximum concentration.");
+        nominal = (minimum + maximum) / 2;
       } else {
-        massEl.value = fmt(mgToSelected(data.outputs.mass_mg_ml));
-        numFullEl.textContent = data.formatted.number_per_ml;
+        nominal = mode === "mass"
+          ? selectedToMg(Number(elements.mass.value))
+          : scientificValue(elements.coeff, elements.exp);
       }
+      const range = calculateConcentrationRange(
+        metalEl.value,
+        sizeSpec(),
+        mode,
+        nominal,
+        minimum,
+        maximum,
+      );
+      const data = range.nominal;
 
-      outSurface.textContent = data.formatted.surface_cm2_ml;
-      outMolar.textContent   = data.formatted.molar_nM;
-      outNumber.textContent  = data.formatted.number_per_ml + " particles/mL";
-      outMass.textContent    = fmt(mgToSelected(data.outputs.mass_mg_ml)) + " " + massUnitLabel();
-      outMetal.textContent   = `${data.metal.symbol} (${data.metal.name})`;
-      outDensity.textContent = `${data.metal.density_g_cm3} g/cm³`;
-      outAW.textContent      = `${data.metal.atomic_weight_g_mol} g/mol`;
-      midRadius.textContent  = data.formatted.radius_cm + " cm";
-      midVolume.textContent  = data.formatted.volume_cm3_per_particle + " cm³";
-      midArea.textContent    = data.formatted.area_cm2_per_particle + " cm²";
-      midMass.textContent    = data.formatted.mass_g_per_particle + " g";
-      resultTagEl.textContent = "Updated";
-    } catch(e) {
-      clearOutputs(); setError(String(e.message || e)); resultTagEl.textContent = "Error";
+      elements.numFull.textContent = data.formatted.number_per_ml;
+
+      $("outSurface").textContent = data.formatted.surface_cm2_ml;
+      $("outMolar").textContent = data.formatted.molar_nM;
+      $("outNumber").textContent = `${data.formatted.number_per_ml} particles/mL`;
+      $("outMass").textContent = `${fmt(mgToSelected(data.outputs.mass_mg_ml))} ${massUnitLabel()}`;
+      $("outSizeModel").textContent = data.size.description;
+      $("outD2").textContent = `${fmt(data.size.mean_d2_nm2)} nm²`;
+      $("outD3").textContent = `${fmt(data.size.mean_d3_nm3)} nm³`;
+      $("outMetal").textContent = `${data.metal.symbol} (${data.metal.name})`;
+      $("outDensity").textContent = `${data.metal.density_g_cm3} g/cm³`;
+      $("midRadius").textContent = `${data.formatted.radius_cm} cm`;
+      $("midVolume").textContent = `${data.formatted.volume_cm3_per_particle} cm³`;
+      $("midArea").textContent = `${data.formatted.area_cm2_per_particle} cm²`;
+      $("midMass").textContent = `${data.formatted.mass_g_per_particle} g`;
+      $("resultTag").textContent = rangeEntry ? "Updated from range midpoint" : "Updated";
+
+      if (range.minimum || range.maximum) {
+        const low = range.minimum ? fmt(range.minimum.outputs.surface_cm2_ml) : "not entered";
+        const high = range.maximum ? fmt(range.maximum.outputs.surface_cm2_ml) : "not entered";
+        $("outRange").textContent = `${low} to ${high} cm²/mL`;
+      } else $("outRange").textContent = "Not entered";
+      if (data.size.warning) showMessage(elements.warning, data.size.warning);
+
+      const params = new URLSearchParams({ stock: data.outputs.surface_cm2_ml, target: 0.096, volume_ul: 2500 });
+      if (range.minimum) params.set("min", range.minimum.outputs.surface_cm2_ml);
+      if (range.maximum) params.set("max", range.maximum.outputs.surface_cm2_ml);
+      $("plannerLink").href = `solve/?${params.toString()}`;
+    } catch (error) {
+      clearOutputs();
+      showMessage(elements.error, String(error.message || error));
+      $("resultTag").textContent = "Check inputs";
     }
   }
 
-  function convertMassValueOnUnitChange() {
-    const current = Number(massEl.value);
-    if (!Number.isFinite(current) || current <= 0) { prevMassUnit = massUnitEl.value; refreshModeUI(); return; }
-    if (prevMassUnit === massUnitEl.value) return;
-    const mg = prevMassUnit === "ug" ? current * 1e-3 : current;
-    massEl.value = fmt(massUnitEl.value === "ug" ? mg * 1e3 : mg);
-    prevMassUnit = massUnitEl.value;
-    refreshModeUI();
+  function convertMassUnit() {
+    const value = Number(elements.mass.value);
+    if (Number.isFinite(value) && value > 0 && previousMassUnit !== elements.massUnit.value) {
+      const mg = previousMassUnit === "ug" ? value * 1e-3 : value;
+      elements.mass.value = fmt(elements.massUnit.value === "ug" ? mg * 1e3 : mg);
+      [elements.massRangeMin, elements.massRangeMax].forEach((element) => {
+        const rangeValue = Number(element.value);
+        if (Number.isFinite(rangeValue) && rangeValue > 0) {
+          const rangeMg = previousMassUnit === "ug" ? rangeValue * 1e-3 : rangeValue;
+          element.value = fmt(elements.massUnit.value === "ug" ? rangeMg * 1e3 : rangeMg);
+        }
+      });
+    }
+    previousMassUnit = elements.massUnit.value;
+    refreshUI();
   }
 
-  fillExponentOptions();
-  massEl.value = "0.10"; coeffEl.value = "2.12"; expEl.value = "11";
-  setFullValueFromCoeffExp();
-
-  metalEl.addEventListener("change", scheduleCompute);
-  diaEl.addEventListener("input", scheduleCompute);
-  massEl.addEventListener("input", () => { if (!massEl.readOnly) scheduleCompute(); });
-  massUnitEl.addEventListener("change", convertMassValueOnUnitChange);
-  coeffEl.addEventListener("input", () => { setFullValueFromCoeffExp(); if (!coeffEl.readOnly) scheduleCompute(); });
-  expEl.addEventListener("change", () => { setFullValueFromCoeffExp(); if (!expEl.disabled) scheduleCompute(); });
-  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", refreshModeUI));
-
-  refreshModeUI();
+  fillExponents();
+  document.querySelectorAll("input, select, textarea").forEach((element) => {
+    element.addEventListener(element.type === "radio" || element.tagName === "SELECT" ? "change" : "input", scheduleCompute);
+  });
+  document.querySelectorAll('input[name="mode"], input[name="sizeMode"], input[name="concentrationEntry"]').forEach((element) => element.addEventListener("change", refreshUI));
+  elements.massUnit.addEventListener("change", convertMassUnit);
+  refreshUI();
 })();
 </script>
 </body>

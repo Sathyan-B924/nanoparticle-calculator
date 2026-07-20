@@ -19,3 +19,7 @@ function copyToClipboard(text, btn) {
     }, 1500);
   });
 }
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { fmt };
+}
