@@ -31,14 +31,14 @@
     </header>
 
     <div class="notice info">
-      Use metal-core sizes from TEM. Hydrodynamic diameter from DLS includes the ligand/solvent shell and is not used for metallic geometric area.
+      Geometric metal area uses the TEM metal-core size. DLS hydrodynamic size includes the ligand/solvent shell and is excluded from the calculation.
     </div>
 
     <main class="grid grid-wide">
       <section class="card">
         <div class="card-head">
           <h2>Stock inputs</h2>
-          <span class="muted">Use the concentration basis stated on the lot certificate.</span>
+          <span class="muted">Concentration basis corresponds to the quantity reported on the lot certificate.</span>
         </div>
 
         <form class="form" onsubmit="return false;">
@@ -56,7 +56,7 @@
                 <label class="radio"><input type="radio" name="sizeMode" value="histogram" /><span>TEM histogram</span></label>
               </div>
             </div>
-            <div class="hint" id="sizeHint">Assumes every particle has the entered core diameter.</div>
+            <div class="hint" id="sizeHint">Model: all particles have the entered core diameter.</div>
           </div>
 
           <div id="sizeSingle" class="size-panel">
@@ -106,7 +106,7 @@
                 <label class="radio"><input type="radio" name="concentrationEntry" value="range" /><span>Min–max range</span></label>
               </div>
             </div>
-            <div class="hint" id="entryHint">Use this when the certificate reports one concentration value.</div>
+            <div class="hint" id="entryHint">For certificates reporting one concentration value.</div>
           </div>
 
           <label id="massUnitPanel" class="field">
@@ -235,8 +235,8 @@
             </div>
           </details>
 
-          <div class="notice caution">
-            This is a material-balance estimate for isolated solid spheres. It does not correct for ligands, aggregation, fusion, surface roughness, or inaccessible catalytic sites. Do not apply a guessed “stacking factor.”
+          <div class="notice info">
+            Calculation scope: nominal geometric area of isolated solid spherical metal cores. Ligands, aggregation, fusion, surface roughness, and site accessibility are outside this calculation.
           </div>
 
           <a id="plannerLink" class="action-link" href="solve/">Plan a dilution using this result →</a>
@@ -244,7 +244,7 @@
       </section>
     </main>
 
-    <footer class="foot">Record whether the working concentration came from a single certified value or the midpoint of a certified range.</footer>
+    <footer class="foot">Certificate input: a single reported value, or the midpoint and bounds of a min–max range.</footer>
   </div>
 
 <script>
@@ -330,7 +330,7 @@
     $("sizeNormal").hidden = sm !== "normal";
     $("sizeHistogram").hidden = sm !== "histogram";
     $("sizeHint").textContent = sm === "single"
-      ? "Assumes every particle has the entered core diameter."
+      ? "Model: all particles have the entered core diameter."
       : sm === "normal"
         ? "Uses analytical number-weighted moments for an arithmetic mean and SD."
         : "Uses the number-weighted second and third moments of your TEM data.";
@@ -349,7 +349,7 @@
       : "Enter the supplier-certified particle-number concentration.";
     $("entryHint").textContent = rangeEntry
       ? "Enter both certified limits. Their midpoint becomes the working concentration."
-      : "Use this when the certificate reports one concentration value.";
+      : "For certificates reporting one concentration value.";
     $("surfaceKpiLabel").textContent = rangeEntry
       ? "Midpoint geometric surface-area concentration"
       : "Nominal geometric surface-area concentration";

@@ -19,11 +19,11 @@ A browser-based calculator for the **nominal geometric surface-area concentratio
 
 For particle-number concentration, area uses `mean(d²)`. For metal-mass concentration, area depends on `mean(d²) / mean(d³)`.
 
-Use TEM **metal-core** diameters. Do not substitute DLS hydrodynamic diameters. Mass input must be metal mass, excluding ligands, stabilizer, and solvent.
+Geometric metal area uses TEM **metal-core** diameters. DLS hydrodynamic diameters represent the ligand/solvent shell and are outside the calculation. Mass input represents metal mass excluding ligands, stabilizer, and solvent.
 
 ## Interpretation
 
-The result assumes isolated solid spheres. It does not correct for aggregation, fusion, ligand blocking, surface roughness, or inaccessible catalytic sites. Treat area-normalized kinetics as apparent geometric-area-normalized kinetics unless active-site density has been measured.
+The calculation scope is isolated solid spheres. Aggregation, fusion, ligand blocking, surface roughness, and inaccessible catalytic sites are outside the result. Rates normalized with this value are geometric-area-normalized rates rather than measured active-site turnover frequencies.
 
 ## Tests
 

@@ -71,7 +71,7 @@
           <label class="field">
             <span class="label">Combined volume of other reagent stocks (µL)</span>
             <input id="reservedVolume" class="control mono" type="number" step="any" min="0" value="0" />
-            <span class="help">Optional. This does not change the nanoparticle aliquot. It is used only to calculate how much solvent/diluent to add after substrate, buffer, reductant, and nanoparticle stock.</span>
+            <span class="help">Optional. This value affects only the solvent/diluent volume; nanoparticle aliquot is determined by target area and final volume.</span>
           </label>
 
           <div id="error" class="msg error" hidden></div>
@@ -115,8 +115,8 @@
           <div class="notice info">
             The aliquot range is inverse to the stock-concentration range: the highest certified stock concentration gives the smallest required aliquot.
           </div>
-          <div class="notice caution">
-            This planner preserves the nominal geometric-area basis. It does not assume that aggregation effects cancel between metals or particle sizes; verify dispersion stability under each reaction condition.
+          <div class="notice info">
+            Calculation scope: dilution by nominal geometric surface area. Aggregation and surface accessibility are outside this calculation.
           </div>
         </div>
       </section>

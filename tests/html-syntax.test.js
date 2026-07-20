@@ -30,9 +30,13 @@ assert.match(stockHtml, /name="concentrationEntry" value="single"/);
 assert.match(stockHtml, /name="concentrationEntry" value="range"/);
 assert.match(stockHtml, /Their midpoint becomes the working concentration/);
 assert.match(stockHtml, /volume_ul: 2500/);
+assert.equal((stockHtml.match(/Calculation scope: nominal geometric area/g) || []).length, 1);
+assert.doesNotMatch(stockHtml, /stacking factor|Do not apply/i);
 
 const plannerHtml = fs.readFileSync(path.join(__dirname, "..", "solve", "index.html"), "utf8");
 assert.match(plannerHtml, /Final reaction volume \(µL\)/);
-assert.match(plannerHtml, /This does not change the nanoparticle aliquot/);
+assert.match(plannerHtml, /This value affects only the solvent\/diluent volume/);
+assert.equal((plannerHtml.match(/Calculation scope: dilution by nominal geometric surface area/g) || []).length, 1);
+assert.doesNotMatch(plannerHtml, /verify dispersion|does not assume/i);
 
 console.log("HTML inline scripts and element IDs are valid.");
